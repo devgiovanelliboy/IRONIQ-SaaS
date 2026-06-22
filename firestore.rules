@@ -1,0 +1,207 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Perfis de usuário ──────────────────────────────────────────────────
+    match /usuarios/{userId} {
+      // Admin global pode ler e alterar qualquer perfil de usuário
+      allow read, write: if request.auth != null
+        && get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.perfil == 'admin';
+
+      // Cada usuário lê o próprio documento
+      allow read: if request.auth != null && request.auth.uid == userId;
+
+      // Personal lê docs de alunos vinculados a ele OU delegados a ele (chat_atendente)
+      allow read: if request.auth != null && (
+        resource.data.personal_vinculado == request.auth.token.email ||
+        resource.data.chat_atendente == request.auth.token.email
+      );
+
+      // Dono cria o próprio doc — NÃO pode nascer com papel privilegiado (anti-escalação).
+      // Papéis admin/personal_interno/personal_principal só via Admin SDK (backend/admin-roles.js).
+      allow create: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.get('perfil', '') != 'admin'
+        && !(request.resource.data.get('tipoPersonal', '') in ['personal_interno', 'personal_principal']);
+
+      // Dono atualiza o próprio doc — pode manter o papel que já tem, mas NÃO pode
+      // escalar perfil/tipoPersonal para um valor privilegiado por conta própria.
+      allow update: if request.auth != null && request.auth.uid == userId
+        && (request.resource.data.get('perfil', '') == resource.data.get('perfil', '')
+            || request.resource.data.get('perfil', '') != 'admin')
+        && (request.resource.data.get('tipoPersonal', '') == resource.data.get('tipoPersonal', '')
+            || !(request.resource.data.get('tipoPersonal', '') in ['personal_interno', 'personal_principal']));
+
+      // Dono apaga o próprio doc
+      allow delete: if request.auth != null && request.auth.uid == userId;
+
+      // Personal Principal (personal_vinculado do autônomo) delega o atendimento de chat:
+      // pode alterar SOMENTE o campo chat_atendente do aluno.
+      allow update: if request.auth != null
+        && resource.data.personal_vinculado == request.auth.token.email
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['chat_atendente']);
+
+      // ── Subcoleção: treinos ─────────────────────────────────────────────
+      match /treinos/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if request.auth != null
+          && get(/databases/$(database)/documents/usuarios/$(userId))
+               .data.personal_vinculado == request.auth.token.email;
+      }
+
+      // ── Subcoleção: dietas ──────────────────────────────────────────────
+      match /dietas/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read, write: if request.auth != null
+          && get(/databases/$(database)/documents/usuarios/$(userId))
+               .data.personal_vinculado == request.auth.token.email;
+      }
+
+      // ── Subcoleção: evolucao ────────────────────────────────────────────
+      match /evolucao/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read: if request.auth != null
+          && get(/databases/$(database)/documents/usuarios/$(userId))
+               .data.personal_vinculado == request.auth.token.email;
+      }
+
+      // ── Subcoleção: historico_treinos ───────────────────────────────────
+      match /historico_treinos/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read: if request.auth != null
+          && get(/databases/$(database)/documents/usuarios/$(userId))
+               .data.personal_vinculado == request.auth.token.email;
+      }
+
+      // ── Subcoleção: imc_historico ───────────────────────────────────────
+      match /imc_historico/{docId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+        allow read: if request.auth != null
+          && get(/databases/$(database)/documents/usuarios/$(userId))
+               .data.personal_vinculado == request.auth.token.email;
+      }
+    }
+
+    // ── Mapa email → UID (necessário para lookups cross-user) ──────────────
+    match /uidMap/{document} {
+      // Leitura aberta a autenticados (lookups cross-user de personais)
+      allow read: if request.auth != null;
+      // Só é possível gravar um mapeamento que aponte para o PRÓPRIO uid —
+      // impede envenenar o mapeamento de outra conta.
+      allow write: if request.auth != null
+        && request.resource.data.uid == request.auth.uid;
+    }
+
+    // ── Fila de aprovação de protocolos ────────────────────────────────────
+    match /protocolos_analise/{docId} {
+      // Aluno lê os próprios; reviewer lê os que direcionaram a ele;
+      // Personal Interno lê protocolos dirigidos ao Personal Principal
+      allow read: if request.auth != null && (
+        resource.data.alunoEmail == request.auth.token.email ||
+        resource.data.reviewerEmail == request.auth.token.email ||
+        resource.data.direcionadoPara == request.auth.token.email ||
+        (
+          resource.data.direcionadoPara == get(/databases/$(database)/documents/configuracoes/sistema).data.personalPrincipal &&
+          get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.tipoPersonal == 'personal_interno'
+        )
+      );
+      // Qualquer usuário autenticado pode criar (submeter protocolo)
+      allow create: if request.auth != null;
+      // Reviewer, aluno ou Personal Interno (para protocolos de autônomos) podem atualizar
+      allow update: if request.auth != null && (
+        resource.data.reviewerEmail == request.auth.token.email ||
+        resource.data.direcionadoPara == request.auth.token.email ||
+        resource.data.alunoEmail == request.auth.token.email ||
+        (
+          resource.data.direcionadoPara == get(/databases/$(database)/documents/configuracoes/sistema).data.personalPrincipal &&
+          get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.tipoPersonal == 'personal_interno'
+        )
+      );
+    }
+
+    // ── Configurações globais do app ────────────────────────────────────────
+    match /configuracoes/{docId} {
+      allow read: if request.auth != null;
+      // Admin (pelo Firestore) escreve qualquer config
+      allow write: if request.auth != null
+        && get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.perfil == 'admin';
+      // Qualquer usuário autenticado pode atualizar SOMENTE o campo personalPrincipal
+      // (o controle de acesso ao painel admin é feito pelo app; esta permissão não
+      //  expõe outros campos nem permite criar docs arbitrários)
+      allow update: if request.auth != null && docId == 'sistema'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['personalPrincipal']);
+      allow create: if request.auth != null && docId == 'sistema'
+        && request.resource.data.keys().hasOnly(['personalPrincipal']);
+    }
+
+    // ── Comissões de personais ───────────────────────────────────────────────
+    match /comissoes/{docId} {
+      // Aluno cria ao aceitar o PRÓPRIO protocolo (impede forjar comissão alheia)
+      allow create: if request.auth != null
+        && request.resource.data.alunoEmail == request.auth.token.email;
+      allow read: if request.auth != null && (
+        resource.data.personalEmail == request.auth.token.email ||
+        resource.data.alunoEmail == request.auth.token.email ||
+        get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.perfil == 'admin'
+      );
+      allow update: if request.auth != null &&
+        get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.perfil == 'admin';
+    }
+
+    // ── Mensagens de chat ─────────────────────────────────────────────────────
+    match /mensagens_chat/{docId} {
+      // Só cria mensagem em nome do próprio remetente, e precisa estar em participants
+      allow create: if request.auth != null
+        && request.resource.data.sender == request.auth.token.email
+        && request.auth.token.email in request.resource.data.participants;
+      // Lê quem é remetente, destinatário ou participante da conversa
+      allow read: if request.auth != null && (
+        resource.data.sender == request.auth.token.email ||
+        resource.data.receiver == request.auth.token.email ||
+        (resource.data.participants is list && request.auth.token.email in resource.data.participants)
+      );
+      // Só o destinatário pode atualizar, e somente o campo 'read' (marcar como lida)
+      allow update: if request.auth != null
+        && resource.data.receiver == request.auth.token.email
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+    }
+
+    // ── Agenda do personal (aulas presenciais + check-in) ─────────────────────
+    match /agenda_slots/{slotId} {
+      function ehVinculado() {
+        return get(/databases/$(database)/documents/usuarios/$(request.auth.uid))
+                 .data.personal_vinculado == resource.data.personalEmail;
+      }
+      // Dono (personal) e alunos vinculados leem os horários
+      allow read: if request.auth != null && (
+        resource.data.personalEmail == request.auth.token.email || ehVinculado()
+      );
+      // Só o dono cria/exclui o horário
+      allow create: if request.auth != null
+        && request.resource.data.personalEmail == request.auth.token.email;
+      allow delete: if request.auth != null
+        && resource.data.personalEmail == request.auth.token.email;
+      // Update: dono edita tudo; aluno vinculado só pode mexer no contador checkinCount
+      allow update: if request.auth != null && (
+        resource.data.personalEmail == request.auth.token.email ||
+        ( ehVinculado()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['checkinCount']) )
+      );
+
+      // Check-in: 1 doc por aluno (id = uid)
+      match /checkins/{ckId} {
+        function slotPersonal() {
+          return get(/databases/$(database)/documents/agenda_slots/$(slotId)).data.personalEmail;
+        }
+        // Personal dono lê a lista de presença; o aluno lê só o próprio
+        allow read: if request.auth != null && (
+          slotPersonal() == request.auth.token.email ||
+          ckId == request.auth.uid
+        );
+        // Aluno vinculado cria/apaga somente o próprio check-in
+        allow create, delete: if request.auth != null
+          && ckId == request.auth.uid
+          && get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.personal_vinculado == slotPersonal();
+      }
+    }
+  }
+}

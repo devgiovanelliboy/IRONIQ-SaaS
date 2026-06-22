@@ -1,0 +1,36 @@
+{
+  "name": "IRONQI — Treinos Inteligentes",
+  "short_name": "IRONQI",
+  "description": "Treinos personalizados por IA que evoluem com você",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0E1111",
+  "theme_color": "#0E1111",
+  "scope": "/",
+  "categories": ["health", "fitness", "lifestyle"],
+  "lang": "pt-BR",
+  "icons": [
+    {
+      "src": "logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "display_override": ["standalone", "fullscreen"],
+  "edge_side_panel": {},
+  "handle_links": "auto",
+  "launch_handler": {
+    "client_mode": "auto"
+  }
+}

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0E1111">
+  <title>IRONQIA — Entrar</title>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%; width: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: #0E1111;
+      color: #E8E8E8;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    ::selection { background: #CCFF00; color: #0E1111; }
+
+    #page-login {
+      min-height: 100dvh; width: 100%;
+      display: flex; align-items: center; justify-content: center;
+      padding: 24px 20px;
+    }
+
+    .login-card {
+      width: 100%; max-width: 420px;
+      background-color: #111414;
+      border: 1px solid #222;
+      border-radius: 16px;
+      padding: 40px 30px;
+    }
+
+    /* ─── LOGO ─── */
+    .logo {
+      text-align: center; margin-bottom: 8px;
+    }
+    .logo .brand {
+      font-size: 32px; font-weight: 900;
+      letter-spacing: -1px;
+    }
+    .logo .brand span { color: #CCFF00; }
+    .logo p {
+      font-size: 13px; color: #777; margin-top: 4px;
+    }
+
+    /* ─── ICON ─── */
+    .icon-wrap {
+      text-align: center; margin-bottom: 20px;
+    }
+    .icon-wrap .circle {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: #1F2525; display: inline-flex;
+      align-items: center; justify-content: center;
+      font-size: 26px;
+    }
+
+    /* ─── FORM ─── */
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-group label {
+      display: block; font-size: 11px; font-weight: 600;
+      color: #888; text-transform: uppercase;
+      letter-spacing: 1px; margin-bottom: 6px;
+    }
+    .input-wrap {
+      display: flex; align-items: center; gap: 12px;
+      background: #1F2525; border: 1px solid #2A3232;
+      border-radius: 12px; padding: 0 14px;
+      transition: border 0.2s;
+    }
+    .input-wrap:focus-within { border-color: #CCFF00; }
+    .input-wrap .icon {
+      flex-shrink: 0; width: 18px; height: 18px;
+      opacity: 0.4;
+    }
+    .input-wrap input {
+      flex: 1; background: none; border: none; outline: none;
+      color: #E8E8E8; font-size: 15px;
+      padding: 15px 0; font-family: inherit;
+    }
+    .input-wrap input::placeholder { color: #555; }
+
+    /* ─── BUTTON ─── */
+    .btn {
+      width: 100%; padding: 16px; border-radius: 12px;
+      font-size: 14px; font-weight: 700; border: none; cursor: pointer;
+      text-transform: uppercase; letter-spacing: 1.5px;
+      transition: all 0.2s; font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+      margin-top: 8px;
+    }
+    .btn-primary { background: #CCFF00; color: #0E1111; }
+    .btn-primary:active { transform: scale(0.97); opacity: 0.9; }
+    .btn-primary:disabled {
+      background: #2A3232; color: #555; cursor: not-allowed;
+      transform: none; opacity: 1;
+    }
+
+    /* ─── LINKS ─── */
+    .links {
+      text-align: center; margin-top: 20px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .links a {
+      color: #777; font-size: 13px; text-decoration: none;
+      transition: color 0.2s;
+    }
+    .links a:hover { color: #CCFF00; }
+    .links a strong { color: #CCFF00; }
+
+    /* ─── ERROR ─── */
+    .error-msg {
+      display: none; font-size: 12px; color: #FF4444;
+      text-align: center; margin-top: 12px;
+    }
+    .error-msg.show { display: block; }
+
+    /* ─── RESPONSIVE ─── */
+  </style>
+</head>
+<body>
+  <div id="page-login">
+    <div class="login-card">
+
+      <div class="icon-wrap">
+        <img src="logo.webp" alt="IRONQIA" style="width:64px; height:64px; border-radius:16px;">
+      </div>
+
+      <div class="logo">
+        <div class="brand">IRON<span>QIA</span></div>
+        <p>Treinos inteligentes que evoluem com você</p>
+      </div>
+
+      <form id="login-form" autocomplete="off" style="margin-top:24px;">
+        <div class="form-group">
+          <label for="email">E-mail</label>
+          <div class="input-wrap">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#E8E8E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="4" width="20" height="16" rx="2"/>
+              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+            </svg>
+            <input type="email" id="email" placeholder="seu@email.com" autocomplete="email">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Senha</label>
+          <div class="input-wrap">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#E8E8E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+            </svg>
+            <input type="password" id="password" placeholder="Mín. 6 caracteres" autocomplete="current-password">
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="submit-btn">ENTRAR</button>
+      </form>
+
+      <div class="error-msg" id="error-msg">Preencha todos os campos.</div>
+
+      <div class="links">
+        <a href="#" onclick="resetarSenha(); return false;">Esqueceu a senha?</a>
+        <a href="#">Ainda não tem conta? <strong>Cadastre-se</strong></a>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    var isDemo = false;
+    var auth = null;
+    try {
+      if (firebaseConfig.apiKey === 'SUA_API_KEY') throw new Error('demo');
+      firebase.initializeApp(firebaseConfig);
+      auth = firebase.auth();
+    } catch (e) { isDemo = true; }
+
+    const form = document.getElementById('login-form');
+    const email = document.getElementById('email');
+    const password = document.getElementById('password');
+    const errorMsg = document.getElementById('error-msg');
+    const btn = document.getElementById('submit-btn');
+
+    function tentarLogin(eVal, pVal) {
+      if (isDemo) {
+        var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+        if (!usuarios[eVal]) { errorMsg.textContent = 'Usuário não encontrado.'; errorMsg.classList.add('show'); return false; }
+        if (usuarios[eVal].senha !== pVal) { errorMsg.textContent = 'Senha incorreta.'; errorMsg.classList.add('show'); return false; }
+        localStorage.setItem('ironqi_logado', eVal);
+        return true;
+      } else {
+        return auth.signInWithEmailAndPassword(eVal, pVal).then(function() { return true; }).catch(function(err) {
+          var erros = { 'auth/user-not-found': 'Usuário não encontrado.', 'auth/wrong-password': 'Senha incorreta.', 'auth/invalid-credential': 'E-mail ou senha inválidos.', 'auth/invalid-email': 'E-mail inválido.', 'auth/too-many-requests': 'Muitas tentativas. Tente novamente mais tarde.' };
+          errorMsg.textContent = erros[err.code] || 'Erro ao conectar.';
+          errorMsg.classList.add('show');
+          return false;
+        });
+      }
+    }
+
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+      errorMsg.classList.remove('show');
+
+      const eVal = email.value.trim();
+      const pVal = password.value.trim();
+
+      if (!eVal || !pVal) { errorMsg.textContent = 'Preencha todos os campos.'; errorMsg.classList.add('show'); return; }
+      if (pVal.length < 6) { errorMsg.textContent = 'A senha deve ter no mínimo 6 caracteres.'; errorMsg.classList.add('show'); return; }
+
+      btn.textContent = 'Entrando...';
+      btn.disabled = true;
+
+      if (isDemo) {
+        setTimeout(function() {
+          if (tentarLogin(eVal, pVal)) { window.location.href = 'index.html'; }
+          else { btn.textContent = 'ENTRAR'; btn.disabled = false; }
+        }, 400);
+      } else {
+        auth.signInWithEmailAndPassword(eVal, pVal)
+          .then(function() { window.location.href = 'index.html'; })
+          .catch(function(err) {
+            var erros = { 'auth/user-not-found': 'Usuário não encontrado.', 'auth/wrong-password': 'Senha incorreta.', 'auth/invalid-credential': 'E-mail ou senha inválidos.', 'auth/invalid-email': 'E-mail inválido.', 'auth/too-many-requests': 'Muitas tentativas. Tente novamente mais tarde.' };
+            errorMsg.textContent = erros[err.code] || 'Erro ao conectar.'; errorMsg.classList.add('show');
+          })
+          .finally(function() { btn.textContent = 'ENTRAR'; btn.disabled = false; });
+      }
+    });
+
+    function resetarSenha() {
+      var email = prompt('Digite seu e-mail para redefinir a senha:');
+      if (!email) return;
+      if (isDemo) { alert('Modo demo: redefinição de senha não disponível. Configure o Firebase.'); }
+      else {
+        auth.sendPasswordResetEmail(email.trim())
+          .then(function() { alert('E-mail de redefinição enviado!'); })
+          .catch(function(err) {
+            var erros = { 'auth/user-not-found': 'Usuário não encontrado.', 'auth/invalid-email': 'E-mail inválido.' };
+            alert(erros[err.code] || 'Erro ao conectar.');
+          });
+      }
+    }
+  </script>
+</body>
+</html>

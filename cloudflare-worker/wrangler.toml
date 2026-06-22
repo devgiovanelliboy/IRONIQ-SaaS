@@ -1,0 +1,6 @@
+name = "ironqi-groq-proxy"
+main = "groq-proxy.js"
+compatibility_date = "2024-11-01"
+
+[vars]
+FIREBASE_PROJECT_ID = "ironiq-e9f7e"
