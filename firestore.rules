@@ -138,15 +138,10 @@ service cloud.firestore {
     // ── Configurações globais do app ────────────────────────────────────────
     match /configuracoes/{docId} {
       allow read: if request.auth != null;
-      // Admin (claim ou doc) escreve qualquer config
+      // Somente admin pode escrever configurações (inclui personalPrincipal).
+      // A atribuição via painel admin já exige ehAdmin() — não há necessidade de
+      // permissão aberta a todos os autenticados.
       allow write: if ehAdmin();
-      // Qualquer usuário autenticado pode atualizar SOMENTE o campo personalPrincipal
-      // (o controle de acesso ao painel admin é feito pelo app; esta permissão não
-      //  expõe outros campos nem permite criar docs arbitrários)
-      allow update: if request.auth != null && docId == 'sistema'
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['personalPrincipal']);
-      allow create: if request.auth != null && docId == 'sistema'
-        && request.resource.data.keys().hasOnly(['personalPrincipal']);
     }
 
     // ── Comissões de personais ───────────────────────────────────────────────
