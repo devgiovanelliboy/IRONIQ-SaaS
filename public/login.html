@@ -219,12 +219,12 @@
 
       if (isDemo) {
         setTimeout(function() {
-          if (tentarLogin(eVal, pVal)) { window.location.href = 'index.html'; }
+          if (tentarLogin(eVal, pVal)) { window.location.href = 'app.html'; }
           else { btn.textContent = 'ENTRAR'; btn.disabled = false; }
         }, 400);
       } else {
         auth.signInWithEmailAndPassword(eVal, pVal)
-          .then(function() { window.location.href = 'index.html'; })
+          .then(function() { window.location.href = 'app.html'; })
           .catch(function(err) {
             var erros = { 'auth/user-not-found': 'Usuário não encontrado.', 'auth/wrong-password': 'Senha incorreta.', 'auth/invalid-credential': 'E-mail ou senha inválidos.', 'auth/invalid-email': 'E-mail inválido.', 'auth/too-many-requests': 'Muitas tentativas. Tente novamente mais tarde.' };
             errorMsg.textContent = erros[err.code] || 'Erro ao conectar.'; errorMsg.classList.add('show');

@@ -2,7 +2,7 @@
   "name": "IRONQI — Treinos Inteligentes",
   "short_name": "IRONQI",
   "description": "Treinos personalizados por IA que evoluem com você",
-  "start_url": "/",
+  "start_url": "/app.html",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0E1111",

@@ -2,11 +2,28 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ── Helpers de papel (Layer B) ─────────────────────────────────────────
+    // Preferem o custom claim (request.auth.token); caem no documento como
+    // fallback transitório enquanto tokens antigos não foram renovados (relogin).
+    // O caminho via doc é seguro porque a Layer A impede a auto-escalação
+    // (o dono não consegue gravar perfil:'admin' nem tipoPersonal privilegiado).
+    function ehAdmin() {
+      return request.auth != null && (
+        request.auth.token.admin == true ||
+        get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.perfil == 'admin'
+      );
+    }
+    function ehInterno() {
+      return request.auth != null && (
+        request.auth.token.tipoPersonal == 'personal_interno' ||
+        get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.tipoPersonal == 'personal_interno'
+      );
+    }
+
     // ── Perfis de usuário ──────────────────────────────────────────────────
     match /usuarios/{userId} {
       // Admin global pode ler e alterar qualquer perfil de usuário
-      allow read, write: if request.auth != null
-        && get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.perfil == 'admin';
+      allow read, write: if ehAdmin();
 
       // Cada usuário lê o próprio documento
       allow read: if request.auth != null && request.auth.uid == userId;
@@ -101,7 +118,7 @@ service cloud.firestore {
         resource.data.direcionadoPara == request.auth.token.email ||
         (
           resource.data.direcionadoPara == get(/databases/$(database)/documents/configuracoes/sistema).data.personalPrincipal &&
-          get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.tipoPersonal == 'personal_interno'
+          ehInterno()
         )
       );
       // Qualquer usuário autenticado pode criar (submeter protocolo)
@@ -113,7 +130,7 @@ service cloud.firestore {
         resource.data.alunoEmail == request.auth.token.email ||
         (
           resource.data.direcionadoPara == get(/databases/$(database)/documents/configuracoes/sistema).data.personalPrincipal &&
-          get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.tipoPersonal == 'personal_interno'
+          ehInterno()
         )
       );
     }
@@ -121,9 +138,8 @@ service cloud.firestore {
     // ── Configurações globais do app ────────────────────────────────────────
     match /configuracoes/{docId} {
       allow read: if request.auth != null;
-      // Admin (pelo Firestore) escreve qualquer config
-      allow write: if request.auth != null
-        && get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.perfil == 'admin';
+      // Admin (claim ou doc) escreve qualquer config
+      allow write: if ehAdmin();
       // Qualquer usuário autenticado pode atualizar SOMENTE o campo personalPrincipal
       // (o controle de acesso ao painel admin é feito pelo app; esta permissão não
       //  expõe outros campos nem permite criar docs arbitrários)
@@ -141,10 +157,9 @@ service cloud.firestore {
       allow read: if request.auth != null && (
         resource.data.personalEmail == request.auth.token.email ||
         resource.data.alunoEmail == request.auth.token.email ||
-        get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.perfil == 'admin'
+        ehAdmin()
       );
-      allow update: if request.auth != null &&
-        get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.perfil == 'admin';
+      allow update: if ehAdmin();
     }
 
     // ── Mensagens de chat ─────────────────────────────────────────────────────

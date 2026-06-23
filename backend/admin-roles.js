@@ -34,7 +34,11 @@
 'use strict';
 
 const path = require('path');
-const admin = require('firebase-admin');
+// firebase-admin v14 usa API modular: require('firebase-admin') já não expõe
+// .credential / .auth() / .firestore() — eles vêm dos subpacotes abaixo.
+const { initializeApp, cert, applicationDefault } = require('firebase-admin/app');
+const { getAuth } = require('firebase-admin/auth');
+const { getFirestore } = require('firebase-admin/firestore');
 
 const PROJECT_ID = 'ironiq-e9f7e';
 const TIPOS_VALIDOS = ['personal', 'personal_interno', 'personal_principal'];
@@ -43,7 +47,7 @@ function initAdmin() {
   // Aceita GOOGLE_APPLICATION_CREDENTIALS ou backend/serviceAccount.json
   let credential;
   if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    credential = admin.credential.applicationDefault();
+    credential = applicationDefault();
   } else {
     let sa;
     try {
@@ -53,25 +57,25 @@ function initAdmin() {
       console.error('   Salve backend/serviceAccount.json ou defina GOOGLE_APPLICATION_CREDENTIALS.\n');
       process.exit(1);
     }
-    credential = admin.credential.cert(sa);
+    credential = cert(sa);
   }
-  admin.initializeApp({ credential, projectId: PROJECT_ID });
+  initializeApp({ credential, projectId: PROJECT_ID });
 }
 
 async function getUid(email) {
-  const user = await admin.auth().getUserByEmail(email);
+  const user = await getAuth().getUserByEmail(email);
   return user.uid;
 }
 
-const db = () => admin.firestore();
+const db = () => getFirestore();
 const userDoc = (uid) => db().collection('usuarios').doc(uid);
 
 async function mergeClaims(uid, patch) {
-  const user = await admin.auth().getUser(uid);
+  const user = await getAuth().getUser(uid);
   const claims = Object.assign({}, user.customClaims || {}, patch);
   // Remove chaves nulas para manter o token enxuto
   Object.keys(claims).forEach((k) => { if (claims[k] === null) delete claims[k]; });
-  await admin.auth().setCustomUserClaims(uid, claims);
+  await getAuth().setCustomUserClaims(uid, claims);
   return claims;
 }
 
@@ -124,7 +128,7 @@ async function whoami(email) {
   const uid = await getUid(email);
   const doc = await userDoc(uid).get();
   const d = doc.exists ? doc.data() : {};
-  const user = await admin.auth().getUser(uid);
+  const user = await getAuth().getUser(uid);
   console.log(`\n${email} (uid ${uid})`);
   console.log(`  doc.perfil       = ${d.perfil || '(vazio)'}`);
   console.log(`  doc.tipoPersonal = ${d.tipoPersonal || '(vazio)'}`);
