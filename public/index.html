@@ -642,7 +642,10 @@
       </div>
       <div class="fbot">
         <span>© <span id="year"></span> IRONIQ. Todos os direitos reservados.</span>
-        <span>Feito pra quem treina e pra quem ensina.</span>
+        <span style="display:flex;gap:16px;flex-wrap:wrap;justify-content:flex-end;align-items:center;">
+          <a href="privacidade.html" style="color:#888;font-size:13px;text-decoration:underline;text-underline-offset:3px;">Política de Privacidade</a>
+          <span>Feito pra quem treina e pra quem ensina.</span>
+        </span>
       </div>
     </div>
   </footer>
@@ -702,7 +705,7 @@
     var lSenha = document.getElementById('senha');
     var lErr = document.getElementById('loginErr');
     var lBtn = document.getElementById('loginBtn');
-    var ERROS = { 'auth/user-not-found': 'Usuário não encontrado.', 'auth/wrong-password': 'Senha incorreta.',
+    var ERROS = { 'auth/user-not-found': 'E-mail ou senha inválidos.', 'auth/wrong-password': 'E-mail ou senha inválidos.',
       'auth/invalid-credential': 'E-mail ou senha inválidos.', 'auth/invalid-email': 'E-mail inválido.',
       'auth/too-many-requests': 'Muitas tentativas. Tente mais tarde.' };
 
@@ -719,7 +722,7 @@
     lForm.addEventListener('submit', function (ev) {
       ev.preventDefault();
       lErr.classList.remove('show');
-      var em = lEmail.value.trim(), pw = lSenha.value.trim();
+      var em = lEmail.value.trim(), pw = lSenha.value;
       if (!em || !pw) { lErr.textContent = 'Preencha e-mail e senha.'; lErr.classList.add('show'); return; }
       if (pw.length < 6) { lErr.textContent = 'A senha deve ter no mínimo 6 caracteres.'; lErr.classList.add('show'); return; }
       lBtn.textContent = 'Entrando...'; lBtn.disabled = true;
@@ -743,8 +746,13 @@
       if (!em) return;
       if (isDemo || !auth) { alert('Redefinição indisponível no modo demo.'); return; }
       auth.sendPasswordResetEmail(em.trim())
-        .then(function () { alert('E-mail de redefinição enviado!'); })
-        .catch(function (err) { alert(ERROS[err.code] || 'Erro ao conectar.'); });
+        .then(function () { alert('Se este e-mail estiver cadastrado, você receberá as instruções de redefinição.'); })
+        .catch(function (err) {
+          var msg = err.code === 'auth/user-not-found'
+            ? 'Se este e-mail estiver cadastrado, você receberá as instruções de redefinição.'
+            : (ERROS[err.code] || 'Erro ao conectar.');
+          alert(msg);
+        });
     }
   </script>
 </body>

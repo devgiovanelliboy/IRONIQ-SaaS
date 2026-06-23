@@ -121,8 +121,13 @@ service cloud.firestore {
           ehInterno()
         )
       );
-      // Qualquer usuário autenticado pode criar (submeter protocolo)
-      allow create: if request.auth != null;
+      // Autenticado pode criar desde que: envie apenas o próprio e-mail como alunoEmail,
+      // os campos obrigatórios estejam presentes e nenhum campo de texto exceda 10 000 chars.
+      allow create: if request.auth != null
+        && request.resource.data.alunoEmail == request.auth.token.email
+        && request.resource.data.keys().hasAll(['alunoEmail', 'reviewerEmail', 'direcionadoPara'])
+        && request.resource.data.get('descricao', '').size() <= 10000
+        && request.resource.data.get('observacoes', '').size() <= 10000;
       // Reviewer, aluno ou Personal Interno (para protocolos de autônomos) podem atualizar
       allow update: if request.auth != null && (
         resource.data.reviewerEmail == request.auth.token.email ||
