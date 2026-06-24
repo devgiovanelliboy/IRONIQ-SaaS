@@ -5245,8 +5245,8 @@
                   setFsUserData(lsEmail, _d);
                   saveUidMapping(lsEmail, uid2);
                   if (_d.plano) _st.planos[lsEmail] = _d.plano;
-                  if (_d.ultimoAceiteTreino) _st.ultimoAceite['treino_' + ] = ;
-                  if (_d.ultimoAceiteDieta) _st.ultimoAceite['dieta_' + ] = ;
+                  if (_d.ultimoAceiteTreino) _st.ultimoAceite['treino_' + lsEmail] = _d.ultimoAceiteTreino;
+                  if (_d.ultimoAceiteDieta) _st.ultimoAceite['dieta_' + lsEmail] = _d.ultimoAceiteDieta;
                   // Firestore é a FONTE DA VERDADE do papel. Se o cache local estava
                   // com o papel errado (ex.: device antigo com um aluno marcado como
                   // personal), corrige as flags e re-roteia para o destino correto.
@@ -5457,7 +5457,7 @@
       var tipoReal = tipo || 'treino';
       var ehAjuste = !!_pendingEhAjuste;
       _pendingEhAjuste = false;
-      if (ehAjuste) _st.ultimoAjuste[ + '_' + ] = ;
+      if (ehAjuste) _st.ultimoAjuste[tipoReal + '_' + email] = new Date().toISOString();
       var entrada = {
         id: id,
         tipo: tipoReal,
@@ -5907,7 +5907,7 @@
       var email = localStorage.getItem('ironqi_logado');
       // Marca início do ciclo deste tipo para controle de limites por plano
       var _agora = new Date().toISOString();
-      if (email) _st.ultimoAceite[tipo + '_' + ] = ;
+      if (email) _st.ultimoAceite[tipo + '_' + email] = _agora;
       if (!isDemo && db && auth && auth.currentUser) {
         var _cicloUpdate = {};
         _cicloUpdate['ultimoAceite' + (tipo === 'treino' ? 'Treino' : 'Dieta')] = _agora;
