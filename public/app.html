@@ -4351,7 +4351,7 @@
     function _perfilDoCache(email) {
       if (!email) return '';
       try {
-        var u = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+        var u = _st.usuarios;
         var d = u[email] ? (u[email].dados || {}) : {};
         return d.perfil || d.tipo || '';
       } catch (e) { return ''; }
@@ -4477,19 +4477,50 @@
     // ─── PERSONAL PRINCIPAL (gestor de todos os alunos autônomos) ───
     var PERSONAL_PRINCIPAL = 'lukas.athademos@gmail.com';
     // Override from cache (admin pode ter alterado via painel sem precisar de novo deploy)
-    (function() { var _pp = localStorage.getItem('ironqi_personal_principal'); if (_pp) PERSONAL_PRINCIPAL = _pp; })();
+    // PERSONAL_PRINCIPAL é carregado do Firestore em carregarPersonalPrincipal()
+
+    // ─── ESTADO GLOBAL EM MEMÓRIA (substitui localStorage para dados) ───
+    // Dados são sempre carregados do Firestore na sessão — nada persiste entre sessões.
+    // localStorage mantém APENAS flags de sessão: ironqi_logado, ironqi_personal_logado,
+    // ironqi_admin_logado, ultima_pagina, ironqi_evolucao_aluno, ironqi_protocolo_aluno,
+    // ironqi_protocolo, ironqi_dieta_texto.
+    var _st = {
+      usuarios: {},
+      pendentes: [],
+      protocolos: [],
+      comissoes: [],
+      comissoesPagas: {},
+      planos: {},
+      planoVencimento: {},
+      trialExpira: {},
+      trialConfig: { ativo: true, duracao: 48, mensagem: 'Teste grátis de 48h — aproveite todos os recursos!' },
+      ultimoAceite: {},
+      ultimoAjuste: {},
+      agua: {},
+      imcHistorico: {},
+      historico: {},
+      notificacoes: [],
+      adminPlanosConfig: {},
+      cupons: [],
+      configGeral: {},
+      personalLimites: {},
+      personalData: {},
+      userStatus: {},
+      chatMsgs: [],
+      agendaSlots: [],
+      agendaCheckins: []
+    };
 
     // ─── FIRESTORE USER DATA HELPERS ───
     var emailToUid = {};
 
     function loadUidMap() {
-      try { var saved = JSON.parse(localStorage.getItem('ironqi_uid_map') || '{}'); for (var k in saved) emailToUid[k] = saved[k]; } catch (e) {}
+      // emailToUid é puramente em memória — não persiste em localStorage
     }
     loadUidMap();
 
     function saveUidMapping(email, uid) {
       emailToUid[email] = uid;
-      localStorage.setItem('ironqi_uid_map', JSON.stringify(emailToUid));
       // As regras do uidMap só permitem gravar o PRÓPRIO mapeamento (uid == auth.uid).
       // Para outros usuários (ex.: personal cacheando o uid do aluno) mantemos só o
       // cache local — a leitura do uidMap deles é liberada. Tentar gravar geraria
@@ -4505,20 +4536,20 @@
       db.collection('configuracoes').doc('sistema').get().then(function(doc) {
         if (doc.exists && doc.data().personalPrincipal) {
           PERSONAL_PRINCIPAL = doc.data().personalPrincipal;
-          localStorage.setItem('ironqi_personal_principal', PERSONAL_PRINCIPAL);
+          // PERSONAL_PRINCIPAL já atualizado em memória
           console.log('[IRONQI] Personal Principal carregado do Firestore:', PERSONAL_PRINCIPAL);
           // Mantém tipoPersonal do PP em sincronia no localStorage (evita discrepância no admin)
-          var _ppUsers = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+          var _ppUsers = _st.usuarios;
           if (_ppUsers[PERSONAL_PRINCIPAL] && (_ppUsers[PERSONAL_PRINCIPAL].dados || {}).tipoPersonal !== 'personal_principal') {
             if (!_ppUsers[PERSONAL_PRINCIPAL].dados) _ppUsers[PERSONAL_PRINCIPAL].dados = {};
             _ppUsers[PERSONAL_PRINCIPAL].dados.tipoPersonal = 'personal_principal';
-            localStorage.setItem('ironqi_usuarios', JSON.stringify(_ppUsers));
+            _st.usuarios = _ppUsers;
           }
           // Migração: se o aluno autônomo logado tem personal_vinculado desatualizado, corrige
           var _user = auth && auth.currentUser;
           if (_user && _user.email) {
             var _uEmail = _user.email;
-            var _uUsuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+            var _uUsuarios = _st.usuarios;
             var _uDados = (_uUsuarios[_uEmail] && _uUsuarios[_uEmail].dados) || {};
             var _uPerfil = _uDados.perfil || _uDados.tipo || '';
             if ((_uPerfil === 'aluno_autonomo' || _uPerfil === 'autonomo') && _uDados.personal_vinculado !== PERSONAL_PRINCIPAL) {
@@ -4526,7 +4557,7 @@
               _uDados.personal_vinculado = PERSONAL_PRINCIPAL;
               if (!_uUsuarios[_uEmail]) _uUsuarios[_uEmail] = {};
               _uUsuarios[_uEmail].dados = _uDados;
-              localStorage.setItem('ironqi_usuarios', JSON.stringify(_uUsuarios));
+              _st.usuarios = _uUsuarios;
               db.collection('usuarios').doc(_user.uid).update({ personal_vinculado: PERSONAL_PRINCIPAL }).catch(function(e) {
                 console.warn('[IRONQI] Erro ao corrigir personal_vinculado no Firestore:', e.code);
               });
@@ -4548,7 +4579,7 @@
       var lookup = function(pUid) {
         db.collection('usuarios').doc(pUid).get().then(function(pDoc) {
           if (pDoc.exists && pDoc.data().plano) {
-            localStorage.setItem('ironqi_plano_' + personalEmail, pDoc.data().plano);
+            _st.planos[personalEmail] = pDoc.data().plano;
           }
         }).catch(function() {});
       };
@@ -4561,13 +4592,13 @@
 
     function setFsUserData(email, data) {
       if (!email) return;
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       if (!usuarios[email]) usuarios[email] = { senha: '', dados: {}, criadoEm: new Date().toISOString() };
       // Merge Firestore data into existing local dados to preserve local-only fields (e.g. fotoUrl)
       for (var k in data) {
         usuarios[email].dados[k] = data[k];
       }
-      localStorage.setItem('ironqi_usuarios', JSON.stringify(usuarios));
+      _st.usuarios = usuarios;
       if (!isDemo && auth && db) {
         var uid = emailToUid[email];
         if (uid) {
@@ -4632,11 +4663,10 @@
     function atualizarSidebar() {
       var email = localStorage.getItem('ironqi_logado') || localStorage.getItem('ironqi_personal_logado');
       if (!email) return;
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var userData = usuarios[email] ? (usuarios[email].dados || {}) : {};
       var nome = userData.nome || 'Aluno IRONQIA';
-      var planos = {};
-      Object.keys(localStorage).filter(function(k) { return k.indexOf('ironqi_plano_') === 0; }).forEach(function(k) { planos[k.replace('ironqi_plano_', '')] = localStorage.getItem(k); });
+      var planos = _st.planos;
       var isPersonal = !!localStorage.getItem('ironqi_personal_logado');
       var plano = isPersonal ? (planos[email] || '') : (getPlanoUsuario() || planos[email] || '');
       var planoNome = 'GRÁTIS';
@@ -4651,9 +4681,8 @@
       var sideBadgeP = document.getElementById('sidebar-plan-badge-personal');
       if (sideBadgeP) sideBadgeP.textContent = planoNome;
 
-      // Sidebar avatar foto
-      var avatarKey = 'perfil_avatar_' + email;
-      var avatarUrl = localStorage.getItem(avatarKey) || (userData.fotoUrl || userData.avatarUrl || '');
+      // Sidebar avatar foto (fotoUrl vem dos dados do usuário no _st.usuarios)
+      var avatarUrl = userData.fotoUrl || userData.avatarUrl || '';
       [['sidebar-avatar-text','sidebar-avatar-img'],['sidebar-avatar-text-personal','sidebar-avatar-img-personal']].forEach(function(ids) {
         var textEl = document.getElementById(ids[0]);
         var imgEl = document.getElementById(ids[1]);
@@ -4689,7 +4718,7 @@
 
       // Se Firebase Auth está disponível, SEMPRE usa Firebase — nunca demo cache — independente de isDemo
       if (isDemo && !auth) {
-        var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+        var usuarios = _st.usuarios;
         if (!usuarios[email]) { alert('Usuário não encontrado.'); btn.disabled = false; btn.textContent = 'Entrar'; return; }
         if (usuarios[email].senha !== pass) { alert('Senha incorreta.'); btn.disabled = false; btn.textContent = 'Entrar'; return; }
 
@@ -4743,8 +4772,8 @@
                 db.collection('usuarios').doc(cred.user.uid).update({ personal_vinculado: PERSONAL_PRINCIPAL }).catch(function() {});
               }
               // Sincroniza plano do Firestore para localStorage
-              if (data.plano) localStorage.setItem('ironqi_plano_' + email, data.plano);
-              if (data.planoVencimento) localStorage.setItem('ironqi_plano_vencimento_' + email, data.planoVencimento);
+              if (data.plano) _st.planos[email] = data.plano;
+              if (data.planoVencimento) _st.planoVencimento[email] = data.planoVencimento;
               setFsUserData(email, data);
               saveUidMapping(email, cred.user.uid);
               sincronizarPlanoPersonal(data, email);
@@ -4764,7 +4793,7 @@
               atualizarSidebar();
             } else {
               // Perfil Firestore ausente — tenta recuperar do cache local (pode ter havido falha de write no registro)
-              var _cache = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+              var _cache = _st.usuarios;
               var _dadosCache = _cache[email] ? _cache[email].dados : null;
               if (_dadosCache && _dadosCache.perfil) {
                 console.warn('Firestore doc ausente — recriando perfil a partir do cache local');
@@ -4796,7 +4825,7 @@
             // usuário está logado. Entra com o que houver em cache e segue.
             console.warn('Pós-login falhou (entrando com cache):', e && (e.code || e.message || e));
             try {
-              var _cache = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+              var _cache = _st.usuarios;
               var _d = _cache[email] ? _cache[email].dados : null;
               var _p = _d ? (_d.perfil || _d.tipo || '') : '';
               document.getElementById('page-login').style.display = 'none';
@@ -4814,7 +4843,7 @@
           // Fallback para localStorage (demo) SOMENTE se Firebase SDK não estiver disponível
           // Quando auth existe mas a senha está errada, mostra erro — não entra em demo mode
           if (!auth) {
-            var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+            var usuarios = _st.usuarios;
             if (usuarios[email] && usuarios[email].senha === pass) {
               isDemo = true;
               localStorage.setItem('ironqi_logado', email);
@@ -4911,7 +4940,7 @@
           if (personalEmail) dados.personal_vinculado = personalEmail;
         }
         if (perfil === 'aluno_autonomo') {
-          dados.personal_vinculado = PERSONAL_PRINCIPAL || localStorage.getItem('ironqi_personal_principal') || '';
+          dados.personal_vinculado = PERSONAL_PRINCIPAL || '';
         }
       }
       return dados;
@@ -4945,14 +4974,14 @@
       var dados = montarDadosRegistro();
 
       if (!auth) {
-        var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+        var usuarios = _st.usuarios;
         if (usuarios[email]) { alert('Este e-mail já está cadastrado.'); btn.disabled = false; btn.textContent = 'Cadastrar'; return; }
         usuarios[email] = {
           senha: pass,
           dados: dados,
           criadoEm: new Date().toISOString()
         };
-        localStorage.setItem('ironqi_usuarios', JSON.stringify(usuarios));
+        _st.usuarios = usuarios;
         localStorage.setItem('ironqi_logado', email);
         if (perfil === 'personal') localStorage.setItem('ironqi_personal_logado', email);
         document.getElementById('page-landing').classList.remove('active');
@@ -5048,7 +5077,7 @@
     // ─── SEED: CRIA CONTAS DEMO SE VAZIO ───
     // Roda sempre (inclusive em modo Firebase) para fallback do login
     (function() {
-        var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+        var usuarios = _st.usuarios;
 
         // Conta existente
         if (!usuarios['daniloteste@gmail.com']) {
@@ -5071,8 +5100,8 @@
           usuarios['aluno_start@teste.com'].dados = usuarios['aluno_start@teste.com'].dados || {};
           usuarios['aluno_start@teste.com'].dados.perfil = 'aluno_autonomo';
         }
-        localStorage.setItem('ironqi_plano_aluno_start@teste.com', 'aluno_start');
-        localStorage.setItem('ironqi_usuarios', JSON.stringify(usuarios));
+        _st.planos['aluno_start@teste.com'] = 'aluno_start';
+        _st.usuarios = usuarios;
 
         // Aluno Autônomo — plano PRO (R$29,90)
         if (!usuarios['aluno_pro@teste.com']) {
@@ -5082,7 +5111,7 @@
             criadoEm: new Date().toISOString()
           };
         }
-        localStorage.setItem('ironqi_plano_aluno_pro@teste.com', 'aluno_pro');
+        _st.planos['aluno_pro@teste.com'] = 'aluno_pro';
 
         // Personal Trainer
         if (!usuarios['personal@teste.com']) {
@@ -5092,7 +5121,7 @@
             criadoEm: new Date().toISOString()
           };
         }
-        localStorage.setItem('ironqi_plano_personal@teste.com', 'personal_pro');
+        _st.planos['personal@teste.com'] = 'personal_pro';
 
         // Admin
         if (!usuarios['admin@ironqi.com']) {
@@ -5119,13 +5148,13 @@
             dados: { nome: 'Lukas', sobrenome: 'Athademos', email: REVISOR_EMAIL, perfil: 'personal', registro: 'CREF-98765-G', instagram: '@lukas_athademos', verAlunosAutonomos: true },
             criadoEm: new Date().toISOString()
           };
-          localStorage.setItem('ironqi_plano_' + REVISOR_EMAIL, 'personal_pro');
+          _st.planos[REVISOR_EMAIL] = 'personal_pro';
         } else {
           var ld = usuarios[REVISOR_EMAIL].dados;
           if (ld) ld.verAlunosAutonomos = true;
         }
 
-        localStorage.setItem('ironqi_usuarios', JSON.stringify(usuarios));
+        _st.usuarios = usuarios;
       })();
 
 
@@ -5187,7 +5216,7 @@
       // 1. Tenta restaurar do localStorage primeiro (rápido, funciona em ambos os modos)
       var lsEmail = localStorage.getItem('ironqi_logado');
       if (lsEmail) {
-        var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+        var usuarios = _st.usuarios;
         if (usuarios[lsEmail]) {
           autologin = false;
           var dados = usuarios[lsEmail].dados || {};
@@ -5215,9 +5244,9 @@
                   var _d = doc.data();
                   setFsUserData(lsEmail, _d);
                   saveUidMapping(lsEmail, uid2);
-                  if (_d.plano) localStorage.setItem('ironqi_plano_' + lsEmail, _d.plano);
-                  if (_d.ultimoAceiteTreino) localStorage.setItem('ironqi_ultimo_aceite_treino_' + lsEmail, _d.ultimoAceiteTreino);
-                  if (_d.ultimoAceiteDieta) localStorage.setItem('ironqi_ultimo_aceite_dieta_' + lsEmail, _d.ultimoAceiteDieta);
+                  if (_d.plano) _st.planos[lsEmail] = _d.plano;
+                  if (_d.ultimoAceiteTreino) _st.ultimoAceite['treino_' + ] = ;
+                  if (_d.ultimoAceiteDieta) _st.ultimoAceite['dieta_' + ] = ;
                   // Firestore é a FONTE DA VERDADE do papel. Se o cache local estava
                   // com o papel errado (ex.: device antigo com um aluno marcado como
                   // personal), corrige as flags e re-roteia para o destino correto.
@@ -5238,9 +5267,9 @@
               // Busca configuração de Trial do Firestore
               db.collection('configuracoes').doc('gerais').get().then(function(cfgDoc) {
                 if (cfgDoc.exists && cfgDoc.data().duracaoTrial) {
-                  var cfg = JSON.parse(localStorage.getItem('ironqi_trial_config') || '{"ativo":true,"duracao":48,"mensagem":"Teste grátis de 48h — aproveite todos os recursos!"}');
+                  var cfg = _st.trialConfig;
                   cfg.duracao = cfgDoc.data().duracaoTrial;
-                  localStorage.setItem('ironqi_trial_config', JSON.stringify(cfg));
+                  _st.trialConfig = cfg;
                 }
               }).catch(function(e) { console.warn('Firestore config fetch error:', e.code || e); });
             });
@@ -5276,9 +5305,9 @@
                   data.personal_vinculado = PERSONAL_PRINCIPAL;
                   db.collection('usuarios').doc(user.uid).update({ personal_vinculado: PERSONAL_PRINCIPAL }).catch(function() {});
                 }
-                if (data.plano) localStorage.setItem('ironqi_plano_' + user.email, data.plano);
-                if (data.ultimoAceiteTreino) localStorage.setItem('ironqi_ultimo_aceite_treino_' + user.email, data.ultimoAceiteTreino);
-                if (data.ultimoAceiteDieta) localStorage.setItem('ironqi_ultimo_aceite_dieta_' + user.email, data.ultimoAceiteDieta);
+                if (data.plano) _st.planos[user.email] = data.plano;
+                if (data.ultimoAceiteTreino) _st.ultimoAceite['treino_' + user.email] = data.ultimoAceiteTreino;
+                if (data.ultimoAceiteDieta) _st.ultimoAceite['dieta_' + user.email] = data.ultimoAceiteDieta;
                 setFsUserData(user.email, data);
                 saveUidMapping(user.email, user.uid);
                 sincronizarPlanoPersonal(data, user.email);
@@ -5300,9 +5329,9 @@
               // Busca configuração de Trial do Firestore
               db.collection('configuracoes').doc('gerais').get().then(function(cfgDoc) {
                 if (cfgDoc.exists && cfgDoc.data().duracaoTrial) {
-                  var cfg = JSON.parse(localStorage.getItem('ironqi_trial_config') || '{"ativo":true,"duracao":48,"mensagem":"Teste grátis de 48h — aproveite todos os recursos!"}');
+                  var cfg = _st.trialConfig;
                   cfg.duracao = cfgDoc.data().duracaoTrial;
-                  localStorage.setItem('ironqi_trial_config', JSON.stringify(cfg));
+                  _st.trialConfig = cfg;
                 }
               }).catch(function(e) { console.warn('Firestore config fetch error:', e.code || e); });
             }).catch(function(e) {
@@ -5336,15 +5365,15 @@
       if (isDemo) {
         var email = localStorage.getItem('ironqi_logado');
         if (email) {
-          var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
-          if (usuarios[email]) { usuarios[email].dados.tipoTreino = type; localStorage.setItem('ironqi_usuarios', JSON.stringify(usuarios)); }
+          var usuarios = _st.usuarios;
+          if (usuarios[email]) { usuarios[email].dados.tipoTreino = type; _st.usuarios = usuarios; }
         }
       } else {
         var user = auth.currentUser;
         if (user) { db.collection('usuarios').doc(user.uid).update({ tipoTreino: type }).catch(function(e) { console.warn('Firestore tipoTreino update error:', e.code || e); }); }
       }
       var _email = email || (auth && auth.currentUser ? auth.currentUser.email : null);
-      var _usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var _usuarios = _st.usuarios;
       var _user = _usuarios[_email];
       var _dados = _user && _user.dados ? _user.dados : {};
       var _perfil = _dados.perfil || _dados.tipo || '';
@@ -5392,7 +5421,7 @@
     function getDirecionadoPara() {
       var email = localStorage.getItem('ironqi_logado');
       if (!email) return PERSONAL_PRINCIPAL;
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var user = usuarios[email];
       var dados = user && user.dados ? user.dados : {};
       var perfil = dados.perfil || dados.tipo || '';
@@ -5406,7 +5435,7 @@
     function temSolicitacaoAtiva(tipo, email) {
       email = email || localStorage.getItem('ironqi_logado');
       if (!email) return false;
-      var pend = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pend = _st.pendentes;
       return pend.some(function(p) {
         return p.alunoEmail === email && p.tipo === tipo &&
           (p.status === 'pendente_aprovacao' || p.status === 'aguardando_aceite_aluno');
@@ -5423,12 +5452,12 @@
         return;
       }
       var direcionado = getDirecionadoPara();
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       var id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
       var tipoReal = tipo || 'treino';
       var ehAjuste = !!_pendingEhAjuste;
       _pendingEhAjuste = false;
-      if (ehAjuste) localStorage.setItem('ironqi_ultimo_ajuste_' + tipoReal + '_' + email, new Date().toISOString());
+      if (ehAjuste) _st.ultimoAjuste[ + '_' + ] = ;
       var entrada = {
         id: id,
         tipo: tipoReal,
@@ -5440,7 +5469,7 @@
       };
       if (ehAjuste) entrada.ehAjuste = true;
       pendentes.push(entrada);
-      localStorage.setItem('ironqi_pendentes', JSON.stringify(pendentes));
+      _st.pendentes = pendentes;
       salvarProtocoloAnalise(protocolo, tipoReal, id, direcionado);
     }
 
@@ -5449,7 +5478,7 @@
       if (!email) return;
       var direcionadoPara = direcionado || getDirecionadoPara();
       if (isDemo || !db) {
-        var analises = JSON.parse(localStorage.getItem('ironqi_protocolos_analise') || '[]');
+        var analises = _st.protocolos;
         var nome = getAlunoNome(email);
         analises.push({
           id: localId,
@@ -5462,10 +5491,10 @@
           protocolo: protocolo,
           dataGerado: new Date().toISOString()
         });
-        localStorage.setItem('ironqi_protocolos_analise', JSON.stringify(analises));
+        _st.protocolos = analises;
         return;
       }
-      var analises = JSON.parse(localStorage.getItem('ironqi_protocolos_analise') || '[]');
+      var analises = _st.protocolos;
       var _nomeAluno = getAlunoNome(email);
       analises.push({
         id: localId,
@@ -5478,7 +5507,7 @@
         protocolo: protocolo,
         dataGerado: new Date().toISOString()
       });
-      localStorage.setItem('ironqi_protocolos_analise', JSON.stringify(analises));
+      _st.protocolos = analises;
       db.collection('protocolos_analise').add({
         alunoEmail: email,
         alunoNome: _nomeAluno,
@@ -5491,12 +5520,12 @@
       }).then(function(docRef) {
         var fsId = docRef.id;
         console.log('[IRONQI] Protocolo salvo no Firestore OK. ID:', fsId, '| direcionadoPara:', direcionadoPara, '| tipo:', tipo);
-        var pend = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+        var pend = _st.pendentes;
         for (var pi = 0; pi < pend.length; pi++) { if (pend[pi].id === localId) { pend[pi].id = fsId; break; } }
-        localStorage.setItem('ironqi_pendentes', JSON.stringify(pend));
-        var anls = JSON.parse(localStorage.getItem('ironqi_protocolos_analise') || '[]');
+        _st.pendentes = pend;
+        var anls = _st.protocolos;
         for (var ai = 0; ai < anls.length; ai++) { if (anls[ai].id === localId) { anls[ai].id = fsId; break; } }
-        localStorage.setItem('ironqi_protocolos_analise', JSON.stringify(anls));
+        _st.protocolos = anls;
       }).catch(function(err) {
         console.error('[IRONQI] ERRO ao salvar protocolo no Firestore:', err.code, err.message);
         alert('⚠️ Erro ao enviar solicitação para o servidor (código: ' + (err.code || err.message) + '). Tente novamente.');
@@ -5517,7 +5546,7 @@
     }
 
     function getAlunoNome(email) {
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       if (usuarios[email] && usuarios[email].dados && usuarios[email].dados.nome) {
         return usuarios[email].dados.nome + ' ' + (usuarios[email].dados.sobrenome || '');
       }
@@ -5540,8 +5569,8 @@
       if (isDemo) {
         var email = localStorage.getItem('ironqi_logado');
         if (email) {
-          var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
-          if (usuarios[email]) { usuarios[email].dados.ultimoTreino = data; localStorage.setItem('ironqi_usuarios', JSON.stringify(usuarios)); }
+          var usuarios = _st.usuarios;
+          if (usuarios[email]) { usuarios[email].dados.ultimoTreino = data; _st.usuarios = usuarios; }
         }
       } else if (u) {
         db.collection('usuarios').doc(u.uid).update({ ultimoTreino: data }).catch(function(e) { console.warn('Firestore ultimoTreino update error:', e.code || e); });
@@ -5742,7 +5771,7 @@
           }, function(err) { console.log('Erro listener:', err); });
       } else {
         // Modo demo: verifica localStorage
-        var analises = JSON.parse(localStorage.getItem('ironqi_protocolos_analise') || '[]');
+        var analises = _st.protocolos;
         for (var i = analises.length - 1; i >= 0; i--) {
           if (analises[i].alunoEmail === email && analises[i].status === 'pendente_aprovacao') {
             _waitingProtocoloId = analises[i].id;
@@ -5772,7 +5801,7 @@
           }, function(err) { console.log('Erro listener:', err); });
       } else if (_waitingProtocoloId) {
         var poll = setInterval(function() {
-          var analises = JSON.parse(localStorage.getItem('ironqi_protocolos_analise') || '[]');
+          var analises = _st.protocolos;
           for (var i = 0; i < analises.length; i++) {
             if (analises[i].id === _waitingProtocoloId) {
               if (analises[i].status === 'aguardando_aceite_aluno') {
@@ -5798,7 +5827,7 @@
       var protocoloId = _waitingProtocoloId || '';
       // Salva em localStorage com status aguardando_aceite_aluno
       var email = localStorage.getItem('ironqi_logado');
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       var encontrado = false;
       for (var i = 0; i < pendentes.length; i++) {
         if (pendentes[i].id === protocoloId) {
@@ -5812,7 +5841,7 @@
       if (!encontrado) {
         pendentes.push({ id: protocoloId, tipo: tipo, alunoEmail: email, status: 'aguardando_aceite_aluno', dataAprovado: new Date().toISOString(), aprovadoPor: personalEmail, protocolo: data.protocolo });
       }
-      localStorage.setItem('ironqi_pendentes', JSON.stringify(pendentes));
+      _st.pendentes = pendentes;
       mostrarAceiteProtocolo(tipo, protocoloId, personalEmail, data.protocolo);
       _waitingProtocoloId = null;
       _waitingTipo = null;
@@ -5878,7 +5907,7 @@
       var email = localStorage.getItem('ironqi_logado');
       // Marca início do ciclo deste tipo para controle de limites por plano
       var _agora = new Date().toISOString();
-      if (email) localStorage.setItem('ironqi_ultimo_aceite_' + tipo + '_' + email, _agora);
+      if (email) _st.ultimoAceite[tipo + '_' + ] = ;
       if (!isDemo && db && auth && auth.currentUser) {
         var _cicloUpdate = {};
         _cicloUpdate['ultimoAceite' + (tipo === 'treino' ? 'Treino' : 'Dieta')] = _agora;
@@ -5886,7 +5915,7 @@
           .catch(function(e) { console.warn('Erro ao salvar ciclo no Firestore:', e.code || e); });
       }
       // Atualiza localStorage: status 'approved'
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       for (var i = 0; i < pendentes.length; i++) {
         if (pendentes[i].id === aceite.id) {
           pendentes[i].status = 'approved';
@@ -5894,7 +5923,7 @@
           break;
         }
       }
-      localStorage.setItem('ironqi_pendentes', JSON.stringify(pendentes));
+      _st.pendentes = pendentes;
       // Esconde a tela de aceite
       var elId = tipo === 'treino' ? 'aceite-protocolo-treino' : 'aceite-protocolo-dieta';
       var el = document.getElementById(elId);
@@ -5949,11 +5978,11 @@
       if (!aceite) return;
       if (!confirm('Tem certeza? O protocolo será descartado e você precisará solicitar um novo.')) return;
       // Atualiza localStorage
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       for (var i = 0; i < pendentes.length; i++) {
         if (pendentes[i].id === aceite.id) { pendentes.splice(i, 1); break; }
       }
-      localStorage.setItem('ironqi_pendentes', JSON.stringify(pendentes));
+      _st.pendentes = pendentes;
       // Atualiza Firestore — protocolos_analise
       if (!isDemo && db) {
         var _rejUpdate = { status: 'rejeitado_aluno', dataRejeicao: new Date().toISOString() };
@@ -5989,11 +6018,11 @@
       if (!aceite) return;
       if (!confirm('Solicitar a geração de um novo protocolo? O atual será descartado.')) return;
       // Remove do localStorage
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       for (var i = 0; i < pendentes.length; i++) {
         if (pendentes[i].id === aceite.id) { pendentes.splice(i, 1); break; }
       }
-      localStorage.setItem('ironqi_pendentes', JSON.stringify(pendentes));
+      _st.pendentes = pendentes;
       if (!isDemo && db) {
         var _novUpdate = { status: 'rejeitado_aluno_novo_solicitado', dataRejeicao: new Date().toISOString() };
         if (aceite.id && aceite.id.indexOf('fs_') !== 0) {
@@ -6025,10 +6054,10 @@
       if (!personalEmail || !alunoEmail) return;
       if (!pessoalTemComissao(personalEmail)) return;
       // Treinos de trial não geram comissão
-      if (typeof trialExpirado !== 'undefined' && localStorage.getItem('ironqi_plano_' + alunoEmail) === 'trial') return;
+      if (typeof trialExpirado !== 'undefined' && _st.planos[alunoEmail] === 'trial') return;
       // Idempotência: não registra comissão duplicada para o mesmo protocolo/tipo
       // (protege contra duplo clique, reload e re-execução do aceite)
-      var _comExist = JSON.parse(localStorage.getItem('ironqi_comissoes') || '[]');
+      var _comExist = _st.comissoes;
       if (protocoloId && _comExist.some(function(c) { return c.protocoloId === protocoloId && c.tipo === tipo; })) {
         return;
       }
@@ -6042,9 +6071,9 @@
         protocoloId: protocoloId,
         dataConfirmado: new Date().toISOString()
       };
-      var comissoes = JSON.parse(localStorage.getItem('ironqi_comissoes') || '[]');
+      var comissoes = _st.comissoes;
       comissoes.push(novaComissao);
-      localStorage.setItem('ironqi_comissoes', JSON.stringify(comissoes));
+      _st.comissoes = comissoes;
       if (!isDemo && db) {
         db.collection('comissoes').add({
           personalEmail: personalEmail,
@@ -6055,11 +6084,11 @@
           protocoloId: protocoloId,
           dataConfirmado: firebase.firestore.FieldValue.serverTimestamp()
         }).then(function(docRef) {
-          var comissoes2 = JSON.parse(localStorage.getItem('ironqi_comissoes') || '[]');
+          var comissoes2 = _st.comissoes;
           for (var i = 0; i < comissoes2.length; i++) {
             if (comissoes2[i].id === novaComissao.id) { comissoes2[i].firestoreId = docRef.id; break; }
           }
-          localStorage.setItem('ironqi_comissoes', JSON.stringify(comissoes2));
+          _st.comissoes = comissoes2;
         }).catch(function(e) { console.warn('Erro ao salvar comissão no Firestore:', e.code || e); });
       }
     }
@@ -6068,7 +6097,7 @@
     // Roda no dispositivo do aluno (a regra exige alunoEmail == usuário autenticado).
     function _reenviarComissoesPendentes() {
       if (isDemo || !db) return;
-      var comissoes = JSON.parse(localStorage.getItem('ironqi_comissoes') || '[]');
+      var comissoes = _st.comissoes;
       var meuEmail = localStorage.getItem('ironqi_logado');
       comissoes.filter(function(c) { return !c.firestoreId && c.alunoEmail === meuEmail; }).forEach(function(c) {
         db.collection('comissoes').add({
@@ -6076,9 +6105,9 @@
           status: c.status || 'confirmado', protocoloId: c.protocoloId,
           dataConfirmado: firebase.firestore.FieldValue.serverTimestamp()
         }).then(function(ref) {
-          var arr = JSON.parse(localStorage.getItem('ironqi_comissoes') || '[]');
+          var arr = _st.comissoes;
           for (var i = 0; i < arr.length; i++) { if (arr[i].id === c.id) { arr[i].firestoreId = ref.id; break; } }
-          localStorage.setItem('ironqi_comissoes', JSON.stringify(arr));
+          _st.comissoes = arr;
         }).catch(function(e) { console.warn('Retry comissão falhou:', e.code || e); });
       });
     }
@@ -6086,7 +6115,7 @@
     function sincronizarComissoesPersonal(email, callback) {
       if (isDemo || !db) { if (callback) callback(); return; }
       db.collection('comissoes').where('personalEmail', '==', email).get().then(function(snap) {
-        var comissoes = JSON.parse(localStorage.getItem('ironqi_comissoes') || '[]');
+        var comissoes = _st.comissoes;
         snap.forEach(function(doc) {
           var d = doc.data();
           var fsId = doc.id;
@@ -6105,7 +6134,7 @@
             });
           }
         });
-        localStorage.setItem('ironqi_comissoes', JSON.stringify(comissoes));
+        _st.comissoes = comissoes;
         if (callback) callback();
       }).catch(function(e) { console.warn('Erro ao sincronizar comissões:', e.code || e); if (callback) callback(); });
     }
@@ -6117,7 +6146,7 @@
       if (!elCard) return;
       if (!pessoalTemComissao(email)) { elCard.style.display = 'none'; return; }
       sincronizarComissoesPersonal(email, function() {
-        var comissoes = JSON.parse(localStorage.getItem('ironqi_comissoes') || '[]');
+        var comissoes = _st.comissoes;
         var minhas = comissoes.filter(function(c) { return c.personalEmail === email && c.status === 'confirmado'; });
         var treinos = minhas.filter(function(c) { return c.tipo === 'treino'; }).length;
         var dietas = minhas.filter(function(c) { return c.tipo === 'dieta'; }).length;
@@ -6134,7 +6163,7 @@
       if (waiting) waiting.style.display = 'none';
 
       // Salva no localStorage para compatibilidade
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       pendentes.push({
         id: _waitingProtocoloId || Date.now().toString(36),
         tipo: _waitingTipo || data.tipo || 'treino',
@@ -6144,7 +6173,7 @@
         status: 'approved',
         protocolo: data.protocolo
       });
-      localStorage.setItem('ironqi_pendentes', JSON.stringify(pendentes));
+      _st.pendentes = pendentes;
 
       if (_waitingTipo === 'dieta' || data.tipo === 'dieta') {
         if (data.protocolo && data.protocolo.resultado) {
@@ -6598,7 +6627,7 @@
       verificarAlertaVencimento();
 
       // Só mostra o card de hidratação para alunos
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var userData = usuarios[email] ? (usuarios[email].dados || {}) : {};
       var perfil = userData.perfil || userData.tipo || '';
       var hydCard = document.getElementById('hyd-card');
@@ -6610,7 +6639,7 @@
       var waiting = document.getElementById('waiting-review');
       if (waiting) waiting.style.display = 'none';
 
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       var aprovadoTreino = null;
       var aprovadoDieta = null;
       var aceiteTreino = null;
@@ -6681,19 +6710,19 @@
         if (doc.exists) {
           var data = doc.data();
           var dataAprovado = data.dataCriacao && data.dataCriacao.toDate ? data.dataCriacao.toDate().toISOString() : new Date().toISOString();
-          var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+          var pendentes = _st.pendentes;
           var fsId = 'fs_treino_' + uid;
           if (data.status === 'aguardando_aceite_aluno' && data.dados) {
             var fsEntry = { id: fsId, tipo: 'treino', alunoEmail: email, status: 'aguardando_aceite_aluno', dataAprovado: dataAprovado, aprovadoPor: data.aprovadoPor || '', protocolo: data.dados };
             var fsIdx = pendentes.findIndex(function(p) { return p.id === fsId; });
             if (fsIdx >= 0) { pendentes[fsIdx] = fsEntry; } else { pendentes.push(fsEntry); }
-            localStorage.setItem('ironqi_pendentes', JSON.stringify(pendentes));
+            _st.pendentes = pendentes;
             mostrarAceiteProtocolo('treino', fsId, data.aprovadoPor || '', data.dados);
           } else if (data.status === 'aprovado' && data.dados) {
             var fsEntry2 = { id: fsId, tipo: 'treino', alunoEmail: email, status: 'approved', dataAprovado: dataAprovado, protocolo: data.dados };
             var fsIdx2 = pendentes.findIndex(function(p) { return p.id === fsId; });
             if (fsIdx2 >= 0) { pendentes[fsIdx2] = fsEntry2; } else { pendentes.push(fsEntry2); }
-            localStorage.setItem('ironqi_pendentes', JSON.stringify(pendentes));
+            _st.pendentes = pendentes;
             exibirTreino(data.dados);
           } else {
             mostrarTelaEspera();
@@ -6726,19 +6755,19 @@
         if (doc.exists) {
           var data = doc.data();
           var dataAprovado = data.dataCriacao && data.dataCriacao.toDate ? data.dataCriacao.toDate().toISOString() : new Date().toISOString();
-          var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+          var pendentes = _st.pendentes;
           var fsDietaId = 'fs_dieta_' + uid;
           if (data.status === 'aguardando_aceite_aluno' && data.dados) {
             var fsDietaEntry = { id: fsDietaId, tipo: 'dieta', alunoEmail: email, status: 'aguardando_aceite_aluno', dataAprovado: dataAprovado, aprovadoPor: data.aprovadoPor || '', protocolo: data.dados };
             var fsDietaIdx = pendentes.findIndex(function(p) { return p.id === fsDietaId; });
             if (fsDietaIdx >= 0) { pendentes[fsDietaIdx] = fsDietaEntry; } else { pendentes.push(fsDietaEntry); }
-            localStorage.setItem('ironqi_pendentes', JSON.stringify(pendentes));
+            _st.pendentes = pendentes;
             mostrarAceiteProtocolo('dieta', fsDietaId, data.aprovadoPor || '', data.dados);
           } else if (data.status === 'aprovado' && data.dados && data.dados.resultado) {
             var fsDietaEntry2 = { id: fsDietaId, tipo: 'dieta', alunoEmail: email, status: 'approved', dataAprovado: dataAprovado, protocolo: data.dados };
             var fsDietaIdx2 = pendentes.findIndex(function(p) { return p.id === fsDietaId; });
             if (fsDietaIdx2 >= 0) { pendentes[fsDietaIdx2] = fsDietaEntry2; } else { pendentes.push(fsDietaEntry2); }
-            localStorage.setItem('ironqi_pendentes', JSON.stringify(pendentes));
+            _st.pendentes = pendentes;
             exibirDietaAprovada(data.dados.resultado);
           } else {
             if (temPendente) buscarProtocoloPendenteEIniciar(email, 'dieta');
@@ -6802,7 +6831,7 @@
     }
 
     function atualizarBadgeNotificacoes() {
-      var notificacoes = JSON.parse(localStorage.getItem('ironqi_notificacoes') || '[]');
+      var notificacoes = _st.notificacoes;
       var naoLidas = notificacoes.filter(function(n) { return !n.lida; });
       var badge = document.getElementById('notificacao-badge');
       if (!badge) return;
@@ -6819,7 +6848,7 @@
       document.getElementById('personal-pendentes-list').style.display = 'none';
       var container = document.getElementById('notificacoes-list');
       container.style.display = 'block';
-      var notificacoes = JSON.parse(localStorage.getItem('ironqi_notificacoes') || '[]');
+      var notificacoes = _st.notificacoes;
       if (!notificacoes.length) {
         container.innerHTML = '<div class="personal-empty"><div class="icon-big">🔔</div><h3>Nenhum alerta</h3><p>Alertas de bem-estar dos alunos aparecerão aqui.</p></div>';
         return;
@@ -6846,26 +6875,26 @@
     }
 
     function marcarNotificacaoLida(id) {
-      var notificacoes = JSON.parse(localStorage.getItem('ironqi_notificacoes') || '[]');
+      var notificacoes = _st.notificacoes;
       for (var i = 0; i < notificacoes.length; i++) {
         if (notificacoes[i].id === id) {
           notificacoes[i].lida = true;
           break;
         }
       }
-      localStorage.setItem('ironqi_notificacoes', JSON.stringify(notificacoes));
+      _st.notificacoes = notificacoes;
       abrirNotificacoes();
     }
 
     // ─── PERSONAL HOME CRM ───
     function pessoalTemComissao(email) {
-      var us = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var us = _st.usuarios;
       var d = (us[email] && us[email].dados) || {};
       return d.tipoPersonal === 'personal_interno' || d.tipoPersonal === 'personal_principal';
     }
 
     function isPersonalInterno(email) {
-      var us = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var us = _st.usuarios;
       var d = (us[email] && us[email].dados) || {};
       return d.tipoPersonal === 'personal_interno';
     }
@@ -6882,8 +6911,8 @@
         return db.collection('protocolos_analise').where('direcionadoPara', '==', alvo).get();
       });
       Promise.all(queries).then(function(snaps) {
-        var analises = JSON.parse(localStorage.getItem('ironqi_protocolos_analise') || '[]');
-        var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+        var analises = _st.protocolos;
+        var pendentes = _st.pendentes;
         var ativos = ['pendente_aprovacao', 'aguardando_aceite_aluno'];
         var alvoSet = {}; alvos.forEach(function(a) { alvoSet[a] = true; });
 
@@ -6924,8 +6953,8 @@
           }
         });
 
-        localStorage.setItem('ironqi_protocolos_analise', JSON.stringify(analises));
-        localStorage.setItem('ironqi_pendentes', JSON.stringify(pendentes));
+        _st.protocolos = analises;
+        _st.pendentes = pendentes;
         console.log('[IRONQI] Sync pendentes: ' + total + ' ativo(s) para', email);
         if (callback) callback();
       }).catch(function(e) {
@@ -6947,7 +6976,7 @@
         db.collection('usuarios').where('chat_atendente', '==', myEmail).get()
       ];
       Promise.all(queries).then(function(snaps) {
-        var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+        var usuarios = _st.usuarios;
         snaps.forEach(function(snap) {
           snap.forEach(function(doc) {
             var data = doc.data();
@@ -6959,7 +6988,7 @@
             }
           });
         });
-        localStorage.setItem('ironqi_usuarios', JSON.stringify(usuarios));
+        _st.usuarios = usuarios;
         if (callback) callback();
       }).catch(function(e) {
         console.warn('Firestore student sync error:', e.code || e);
@@ -6976,9 +7005,9 @@
       sincronizarAlunosDoPersonal(myEmail, function() {
       sincronizarProtocolosPendentes(myEmail, function() {
       var searchTerm = (document.getElementById('personal-home-search').value || '').toLowerCase().trim();
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
-      var pendencias = JSON.parse(localStorage.getItem('ironqi_protocolos_analise') || '[]');
+      var usuarios = _st.usuarios;
+      var pendentes = _st.pendentes;
+      var pendencias = _st.protocolos;
       var alunos = [];
       var _meInterno = isPersonalInterno(myEmail);
       Object.keys(usuarios).forEach(function(k) {
@@ -7008,8 +7037,7 @@
         nome = nome.trim() || a.email.split('@')[0];
         var show = !searchTerm || nome.toLowerCase().indexOf(searchTerm) !== -1 || a.email.toLowerCase().indexOf(searchTerm) !== -1;
         if (!show) return;
-        var avatarKey = 'perfil_avatar_' + a.email;
-        var avatarSrc = localStorage.getItem(avatarKey) || a.dados.fotoUrl || a.dados.avatarUrl || '';
+        var avatarSrc = a.dados.fotoUrl || a.dados.avatarUrl || '';
         var idade = a.dados.idade || a.dados.idade_anos || '—';
         var peso = a.dados.peso || '—';
         var altura = a.dados.altura || a.dados.altura_cm || '—';
@@ -7055,7 +7083,7 @@
     }
 
     function abrirTreinoAluno(email) {
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       var aprovado = null;
       for (var i = 0; i < pendentes.length; i++) {
         if (pendentes[i].alunoEmail === email && pendentes[i].status === 'approved' && pendentes[i].protocolo) {
@@ -7075,7 +7103,7 @@
     }
 
     function abrirDietaAluno(email) {
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       var aprovado = null;
       for (var i = 0; i < pendentes.length; i++) {
         if (pendentes[i].alunoEmail === email && pendentes[i].tipo === 'dieta' && pendentes[i].status === 'approved' && pendentes[i].dieta) {
@@ -7114,10 +7142,10 @@
       // Sincroniza do Firestore antes de renderizar — garante que não perdemos
       // protocolos enviados após o último login ou antes do painel carregar.
       sincronizarProtocolosPendentes(meuEmail, function() {
-        var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+        var usuarios = _st.usuarios;
         var meusDados = usuarios[meuEmail] && usuarios[meuEmail].dados;
         var verAutonomos = meusDados && meusDados.verAlunosAutonomos === true;
-        var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+        var pendentes = _st.pendentes;
 
         // Item é direcionado a mim (ou ao Principal, se eu posso ver autônomos)?
         function ehMeu(p) {
@@ -7178,7 +7206,7 @@
     function _podeRevisar(item) {
       if (!item) return false;
       var meuEmail = localStorage.getItem('ironqi_logado') || localStorage.getItem('ironqi_personal_logado');
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var meusDados = usuarios[meuEmail] && usuarios[meuEmail].dados;
       var verAutonomos = meusDados && meusDados.verAlunosAutonomos === true;
       var dir = item.direcionadoPara || 'personal_principal';
@@ -7188,7 +7216,7 @@
     }
 
     function _itemPendente(id) {
-      var pend = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pend = _st.pendentes;
       for (var i = 0; i < pend.length; i++) { if (pend[i].id === id) return pend[i]; }
       return null;
     }
@@ -7201,7 +7229,7 @@
     }
 
     function abrirRevisao(id) {
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       var item = null;
       for (var i = 0; i < pendentes.length; i++) {
         if (pendentes[i].id === id) { item = pendentes[i]; break; }
@@ -7303,18 +7331,18 @@
 
     function gerarDietaPersonal() {
       if (!currentReviewId) return;
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       var item = null;
       for (var i = 0; i < pendentes.length; i++) {
         if (pendentes[i].id === currentReviewId) { item = pendentes[i]; break; }
       }
       // Procura também em protocolos_analise se não encontrou em pendentes
       if (!item || !item.protocolo) {
-        var analises = JSON.parse(localStorage.getItem('ironqi_protocolos_analise') || '[]');
+        var analises = _st.protocolos;
         for (var a = 0; a < analises.length; a++) {
           if (analises[a].id === currentReviewId) {
             pendentes.push(JSON.parse(JSON.stringify(analises[a])));
-            localStorage.setItem('ironqi_pendentes', JSON.stringify(pendentes));
+            _st.pendentes = pendentes;
             item = pendentes[pendentes.length - 1];
             break;
           }
@@ -7416,17 +7444,17 @@
 
         // Salva o resultado no pending item
         item.protocolo.resultado = text;
-        localStorage.setItem('ironqi_pendentes', JSON.stringify(pendentes));
+        _st.pendentes = pendentes;
 
         // Atualiza também no protocolos_analise
-        var analises = JSON.parse(localStorage.getItem('ironqi_protocolos_analise') || '[]');
+        var analises = _st.protocolos;
         for (var a = 0; a < analises.length; a++) {
           if (analises[a].id === currentReviewId) {
             analises[a].protocolo = item.protocolo;
             break;
           }
         }
-        localStorage.setItem('ironqi_protocolos_analise', JSON.stringify(analises));
+        _st.protocolos = analises;
 
         // Mostra o resultado com botão de aprovar
         var html =
@@ -7447,14 +7475,14 @@
 
     function atualizarProtocoloAnalise(id, updates) {
       // Atualiza no localStorage
-      var analises = JSON.parse(localStorage.getItem('ironqi_protocolos_analise') || '[]');
+      var analises = _st.protocolos;
       for (var i = 0; i < analises.length; i++) {
         if (analises[i].id === id) {
           for (var k in updates) analises[i][k] = updates[k];
           break;
         }
       }
-      localStorage.setItem('ironqi_protocolos_analise', JSON.stringify(analises));
+      _st.protocolos = analises;
       // Atualiza no Firestore
       if (!isDemo && db && id) {
         db.collection('protocolos_analise').doc(id).update(updates).catch(function(err) {
@@ -7473,7 +7501,7 @@
       if (_bloquearAprovacaoNaoAutorizada()) return;
       var dataAprovado = new Date().toISOString();
       var personalEmail = localStorage.getItem('ironqi_personal_logado') || localStorage.getItem('ironqi_logado') || '';
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       for (var i = 0; i < pendentes.length; i++) {
         if (pendentes[i].id === currentReviewId) {
           pendentes[i].status = 'aguardando_aceite_aluno';
@@ -7482,7 +7510,7 @@
           break;
         }
       }
-      localStorage.setItem('ironqi_pendentes', JSON.stringify(pendentes));
+      _st.pendentes = pendentes;
       atualizarProtocoloAnalise(currentReviewId, { status: 'aguardando_aceite_aluno', dataAprovado: dataAprovado, aprovadoPor: personalEmail });
       salvarNaSubcolecaoPendente(currentReviewId);
       alert('✅ Dieta enviada para avaliação do aluno!');
@@ -7492,20 +7520,20 @@
     function cancelarDietaPersonal() {
       if (!currentReviewId) return;
       if (!confirm('Descartar a dieta gerada?')) return;
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       for (var i = 0; i < pendentes.length; i++) {
         if (pendentes[i].id === currentReviewId) {
           delete pendentes[i].protocolo.resultado;
           break;
         }
       }
-      localStorage.setItem('ironqi_pendentes', JSON.stringify(pendentes));
+      _st.pendentes = pendentes;
       navigate('personal-dashboard');
     }
 
     function salvarEdicoes() {
       if (!currentReviewId) return;
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       var item = null;
       for (var i = 0; i < pendentes.length; i++) {
         if (pendentes[i].id === currentReviewId) { item = pendentes[i]; break; }
@@ -7524,12 +7552,12 @@
           }
         }
       });
-      localStorage.setItem('ironqi_pendentes', JSON.stringify(pendentes));
+      _st.pendentes = pendentes;
     }
 
     function salvarNaSubcolecaoPendente(id) {
       if (isDemo || !db) return;
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       for (var i = 0; i < pendentes.length; i++) {
         if (pendentes[i].id === id) {
           var p = pendentes[i];
@@ -7570,7 +7598,7 @@
       if (_bloquearAprovacaoNaoAutorizada()) return;
       var dataAprovado = new Date().toISOString();
       var personalEmail = localStorage.getItem('ironqi_personal_logado') || localStorage.getItem('ironqi_logado') || '';
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       for (var i = 0; i < pendentes.length; i++) {
         if (pendentes[i].id === currentReviewId) {
           pendentes[i].status = 'aguardando_aceite_aluno';
@@ -7579,7 +7607,7 @@
           break;
         }
       }
-      localStorage.setItem('ironqi_pendentes', JSON.stringify(pendentes));
+      _st.pendentes = pendentes;
       atualizarProtocoloAnalise(currentReviewId, { status: 'aguardando_aceite_aluno', dataAprovado: dataAprovado, aprovadoPor: personalEmail });
       salvarNaSubcolecaoPendente(currentReviewId);
       alert('Treino salvo e enviado para avaliação do aluno!');
@@ -7591,7 +7619,7 @@
       if (_bloquearAprovacaoNaoAutorizada()) return;
       var dataAprovado = new Date().toISOString();
       var personalEmail = localStorage.getItem('ironqi_personal_logado') || localStorage.getItem('ironqi_logado') || '';
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       for (var i = 0; i < pendentes.length; i++) {
         if (pendentes[i].id === currentReviewId) {
           pendentes[i].status = 'aguardando_aceite_aluno';
@@ -7600,7 +7628,7 @@
           break;
         }
       }
-      localStorage.setItem('ironqi_pendentes', JSON.stringify(pendentes));
+      _st.pendentes = pendentes;
       atualizarProtocoloAnalise(currentReviewId, { status: 'aguardando_aceite_aluno', dataAprovado: dataAprovado, aprovadoPor: personalEmail });
       salvarNaSubcolecaoPendente(currentReviewId);
       alert('Treino enviado para avaliação do aluno!');
@@ -7610,7 +7638,7 @@
     function regenerarTreino() {
       if (!currentReviewId) return;
       if (!confirm('Gerar um novo treino com IA? O treino atual será substituído.')) return;
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       var item = null;
       for (var i = 0; i < pendentes.length; i++) {
         if (pendentes[i].id === currentReviewId) { item = pendentes[i]; break; }
@@ -7622,7 +7650,7 @@
       item.protocolo = novo;
       item.status = 'pending';
       item.dataGerado = new Date().toISOString();
-      localStorage.setItem('ironqi_pendentes', JSON.stringify(pendentes));
+      _st.pendentes = pendentes;
       alert('Novo treino gerado! Revise e aprove.');
       abrirRevisao(currentReviewId);
     }
@@ -7634,7 +7662,7 @@
         alert('Nenhum treino ativo para editar.');
         return;
       }
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       var encontrado = null;
       for (var i = 0; i < pendentes.length; i++) {
         if (pendentes[i].alunoEmail === alunoEmail && pendentes[i].protocolo) {
@@ -7655,14 +7683,14 @@
 
     function abrirModalAprovacao(id) {
       _modalAprovacaoId = id;
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       var item = null;
       for (var i = 0; i < pendentes.length; i++) {
         if (pendentes[i].id === id) { item = pendentes[i]; break; }
       }
       if (!item) {
         // Tenta buscar do protocolos_analise
-        var analises = JSON.parse(localStorage.getItem('ironqi_protocolos_analise') || '[]');
+        var analises = _st.protocolos;
         for (var i = 0; i < analises.length; i++) {
           if (analises[i].id === id) {
             item = analises[i];
@@ -7758,7 +7786,7 @@
       // Salva edições se houver
       var inputs = document.querySelectorAll('#modal-aprovar-conteudo .review-ex-input, #modal-aprovar-conteudo .review-reps-input');
       if (inputs.length) {
-        var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+        var pendentes = _st.pendentes;
         var item = null;
         for (var i = 0; i < pendentes.length; i++) {
           if (pendentes[i].id === _modalAprovacaoId) { item = pendentes[i]; break; }
@@ -7775,13 +7803,13 @@
               }
             }
           });
-          localStorage.setItem('ironqi_pendentes', JSON.stringify(pendentes));
+          _st.pendentes = pendentes;
         }
       }
       // Atualiza status — usa 'aguardando_aceite_aluno' para que o aluno passe pelo fluxo de aceite
       var _apDataAprovado = new Date().toISOString();
       var _apPersonalEmail = localStorage.getItem('ironqi_personal_logado') || localStorage.getItem('ironqi_logado') || '';
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       for (var i = 0; i < pendentes.length; i++) {
         if (pendentes[i].id === _modalAprovacaoId) {
           pendentes[i].status = 'aguardando_aceite_aluno';
@@ -7790,14 +7818,14 @@
           break;
         }
       }
-      localStorage.setItem('ironqi_pendentes', JSON.stringify(pendentes));
+      _st.pendentes = pendentes;
       atualizarProtocoloAnalise(_modalAprovacaoId, { status: 'aguardando_aceite_aluno', dataAprovado: _apDataAprovado, aprovadoPor: _apPersonalEmail });
       salvarNaSubcolecaoPendente(_modalAprovacaoId);
       fecharModalAprovacao();
       alert('✅ Protocolo aprovado! O aluno será notificado em tempo real.');
       var personalEmail = localStorage.getItem('ironqi_logado') || localStorage.getItem('ironqi_personal_logado');
       if (personalEmail) {
-        var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+        var usuarios = _st.usuarios;
         renderKanban(personalEmail, usuarios);
       }
     }
@@ -7817,20 +7845,20 @@
       currentReviewId = _modalAprovacaoId;
       fecharModalAprovacao();
       // Garante que o item existe em pendentes
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       var existe = false;
       for (var i = 0; i < pendentes.length; i++) {
         if (pendentes[i].id === currentReviewId) { existe = true; break; }
       }
       if (!existe) {
-        var analises = JSON.parse(localStorage.getItem('ironqi_protocolos_analise') || '[]');
+        var analises = _st.protocolos;
         for (var a = 0; a < analises.length; a++) {
           if (analises[a].id === currentReviewId) {
             pendentes.push(JSON.parse(JSON.stringify(analises[a])));
             break;
           }
         }
-        localStorage.setItem('ironqi_pendentes', JSON.stringify(pendentes));
+        _st.pendentes = pendentes;
       }
       abrirRevisao(currentReviewId);
     }
@@ -7847,7 +7875,7 @@
       // Route guard: redirect alunos away from restricted pages
       var _navEmail = localStorage.getItem('ironqi_logado');
       if (_navEmail) {
-        var _navUsers = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+        var _navUsers = _st.usuarios;
         var _navData = _navUsers[_navEmail] ? (_navUsers[_navEmail].dados || {}) : {};
         var _navPerfil = _navData.perfil || _navData.tipo || '';
         var _navStudent = _navPerfil.indexOf('aluno_') === 0 || _navPerfil === 'autonomo' || _navPerfil === 'alunoPersonal';
@@ -7983,12 +8011,12 @@
       if (!email) { document.getElementById('perfil-nome').textContent = 'Não logado'; return; }
 
       var isPersonal = !!localStorage.getItem('ironqi_personal_logado');
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var userData = usuarios[email] ? (usuarios[email].dados || {}) : {};
       var tipo = userData.tipo || (isPersonal ? 'personal' : 'autonomo');
 
       var planos = {};
-      Object.keys(localStorage).filter(function(k) { return k.indexOf('ironqi_plano_') === 0; }).forEach(function(k) { planos[k.replace('ironqi_plano_', '')] = localStorage.getItem(k); });
+      Object.assign(planos, _st.planos);
       var plano = getPlanoUsuario() || planos[email] || '';
       var planoNome = '';
       if (plano === 'aluno_start') planoNome = 'Aluno START (R$19,90)';
@@ -8003,8 +8031,7 @@
       var sobrenome = userData.sobrenome || '';
       var nomeCompleto = (nome + ' ' + sobrenome).trim() || email.split('@')[0];
 
-      var avatarKey = 'perfil_avatar_' + email;
-      var avatarSrc = localStorage.getItem(avatarKey) || userData.fotoUrl || userData.avatarUrl || 'logo.webp';
+      var avatarSrc = userData.fotoUrl || userData.avatarUrl || 'logo.webp';
 
       document.getElementById('perfil-left-avatar-img').src = avatarSrc;
       document.getElementById('perfil-left-name').textContent = nomeCompleto;
@@ -8038,7 +8065,7 @@
 
       // Stats (exemplo baseado em dados disponíveis)
       var treinosCount = 0, diasCount = 0, metasCount = 0;
-      try { var historico = JSON.parse(localStorage.getItem('ironqi_historico_' + email) || '[]'); treinosCount = historico.length; } catch(e) {}
+      try { var historico = (_st.historico[email] || []); treinosCount = historico.length; } catch(e) {}
       diasCount = Math.floor((Date.now() - new Date(usuarios[email] && usuarios[email].criadoEm || Date.now()).getTime()) / 86400000) || 1;
       metasCount = Math.floor(treinosCount * 0.7);
       document.getElementById('perfil-stat-treinos').textContent = treinosCount;
@@ -8081,7 +8108,7 @@
       var planoEfetivo = getPlanoUsuario() || plano;
       if (planoEfetivo === 'aluno_pro' || (planoEfetivo && planoEfetivo.indexOf('personal_') === 0)) {
         suporte.style.display = 'block';
-        var config = JSON.parse(localStorage.getItem('ironqi_config_geral') || '{}');
+        var config = _st.configGeral;
         var whatsapp = config.whatsapp || '';
         var emailSuporte = config.emailSuporte || '';
         if (whatsapp) {
@@ -8138,11 +8165,11 @@
         sidImgP.style.display = 'block';
       }
       // Persistir em localStorage
-      localStorage.setItem('perfil_avatar_' + email, url);
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      if (_st.usuarios[]) { if (!_st.usuarios[].dados) _st.usuarios[].dados = {}; _st.usuarios[].dados.fotoUrl = ; }
+      var usuarios = _st.usuarios;
       if (!usuarios[email]) usuarios[email] = { senha: '', dados: {} };
       usuarios[email].dados.fotoUrl = url;
-      localStorage.setItem('ironqi_usuarios', JSON.stringify(usuarios));
+      _st.usuarios = usuarios;
     }
 
     function uploadFotoPerfil(event) {
@@ -8223,7 +8250,7 @@
         btn.disabled = true;
         var email = localStorage.getItem('ironqi_logado') || localStorage.getItem('ironqi_personal_logado');
         if (!email) return;
-        var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+        var usuarios = _st.usuarios;
         if (!usuarios[email]) usuarios[email] = { senha: '', dados: {} };
         usuarios[email].dados.sobre = novoTexto;
         setFsUserData(email, usuarios[email].dados);
@@ -8242,7 +8269,7 @@
       var body = document.getElementById('modal-editar-perfil-body');
       var email = localStorage.getItem('ironqi_logado') || localStorage.getItem('ironqi_personal_logado');
       if (!email) { overlay.style.display = 'none'; return; }
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var userData = usuarios[email] ? (usuarios[email].dados || {}) : {};
       var tipo = userData.tipo || (localStorage.getItem('ironqi_personal_logado') ? 'personal' : 'autonomo');
 
@@ -8282,7 +8309,7 @@
 
       var email = localStorage.getItem('ironqi_logado') || localStorage.getItem('ironqi_personal_logado');
       if (!email) { btn.textContent = '💾 Salvar Alterações'; btn.disabled = false; return; }
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       if (!usuarios[email]) usuarios[email] = { senha: '', dados: {} };
       var d = usuarios[email].dados || {};
       var tipo = d.tipo || (localStorage.getItem('ironqi_personal_logado') ? 'personal' : 'autonomo');
@@ -8312,11 +8339,11 @@
                 var oldEmail = email;
                 var newEmail = novoEmail;
                 // Re-key localStorage data to new email
-                var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+                var usuarios = _st.usuarios;
                 if (usuarios[oldEmail]) {
                   usuarios[newEmail] = usuarios[oldEmail];
                   delete usuarios[oldEmail];
-                  localStorage.setItem('ironqi_usuarios', JSON.stringify(usuarios));
+                  _st.usuarios = usuarios;
                 }
                 localStorage.setItem('ironqi_logado', newEmail);
                 localStorage.removeItem('ironqi_personal_logado');
@@ -8326,7 +8353,7 @@
                 if (uid) {
                   emailToUid[newEmail] = uid;
                   delete emailToUid[oldEmail];
-                  localStorage.setItem('ironqi_uid_map', JSON.stringify(emailToUid));
+                  
                 }
               }));
             }
@@ -8351,7 +8378,7 @@
 
         Promise.all(promises).then(function() {
           usuarios[email].dados = d;
-          localStorage.setItem('ironqi_usuarios', JSON.stringify(usuarios));
+          _st.usuarios = usuarios;
           mostrarToastPerfil('✅ Dados salvos com sucesso!');
           setTimeout(function() {
             fecharModalEditarPerfil();
@@ -8407,17 +8434,32 @@
       localStorage.removeItem('ironqi_dieta_texto');
       localStorage.removeItem('ironqi_protocolo');
       localStorage.removeItem('ironqi_protocolo_aluno');
-      // Caches globais que acumulam dados de TODAS as contas no mesmo dispositivo.
-      // São re-sincronizados do Firestore após o login — seguro limpar aqui.
-      localStorage.removeItem('ironqi_pendentes');
-      localStorage.removeItem('ironqi_protocolos_analise');
-      localStorage.removeItem('ironqi_notificacoes');
-      localStorage.removeItem('ironqi_comissoes');
-      localStorage.removeItem('ironqi_comissoes_pagas');
-      localStorage.removeItem('chat_messages');
-      localStorage.removeItem('ironqi_agua');
-      localStorage.removeItem('ironqi_agenda_slots');
-      localStorage.removeItem('ironqi_agenda_checkins');
+      // Reseta todo o estado em memória — os dados serão recarregados do Firestore
+      // após o próximo login, garantindo que nenhum dado de uma conta vaze para outra.
+      _st.usuarios = {};
+      _st.pendentes = [];
+      _st.protocolos = [];
+      _st.comissoes = [];
+      _st.comissoesPagas = {};
+      _st.planos = {};
+      _st.planoVencimento = {};
+      _st.trialExpira = {};
+      _st.trialConfig = { ativo: true, duracao: 48, mensagem: 'Teste grátis de 48h — aproveite todos os recursos!' };
+      _st.ultimoAceite = {};
+      _st.ultimoAjuste = {};
+      _st.agua = {};
+      _st.imcHistorico = {};
+      _st.historico = {};
+      _st.notificacoes = [];
+      _st.adminPlanosConfig = {};
+      _st.cupons = [];
+      _st.configGeral = {};
+      _st.personalLimites = {};
+      _st.personalData = {};
+      _st.userStatus = {};
+      _st.chatMsgs = [];
+      _st.agendaSlots = [];
+      _st.agendaCheckins = [];
 
       // Flags de PAPEL — decidem se o app mostra a tela de admin/personal.
       // Se não forem limpas aqui, vazam entre contas no mesmo dispositivo:
@@ -8492,7 +8534,7 @@
 
     function getPendenciasAluno(email) {
       if (isDemo || !db) {
-        var analises = JSON.parse(localStorage.getItem('ironqi_protocolos_analise') || '[]');
+        var analises = _st.protocolos;
         return analises.filter(function(a) { return a.alunoEmail === email && a.status === 'pendente_aprovacao'; });
       }
       return [];
@@ -8502,7 +8544,7 @@
       kanbanCardCounter = 0;
       sincronizarAlunosDoPersonal(email, function() {
       sincronizarProtocolosPendentes(email, function() {
-        var todosUsuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+        var todosUsuarios = _st.usuarios;
         var vinculados = [], autonomos = [];
         var _kbInterno = isPersonalInterno(email);
         Object.keys(todosUsuarios).forEach(function(k) {
@@ -8548,7 +8590,7 @@
     function renderKanbanColuna(bodyId, badgeId, lista, tipo) {
       var body = document.getElementById(bodyId);
       var badge = document.getElementById(badgeId);
-      var pendencias = JSON.parse(localStorage.getItem('ironqi_protocolos_analise') || '[]');
+      var pendencias = _st.protocolos;
       badge.textContent = lista.length;
       if (!lista.length) {
         body.innerHTML = '<div class="kanban-empty">Nenhum aluno ' + (tipo === 'vinculados' ? 'vinculado' : 'autônomo') + ' encontrado.</div>';
@@ -8559,8 +8601,7 @@
         var idx = kanbanCardCounter++;
         var nome = (a.dados.nome || '') + ' ' + (a.dados.sobrenome || '');
         nome = nome.trim() || a.email.split('@')[0];
-        var avatarKey = 'perfil_avatar_' + a.email;
-        var avatarSrc = localStorage.getItem(avatarKey) || a.dados.fotoUrl || a.dados.avatarUrl || '';
+        var avatarSrc = a.dados.fotoUrl || a.dados.avatarUrl || '';
         var peso = a.dados.peso || '—';
         var altura = a.dados.altura || a.dados.altura_cm || '—';
         var imc = '—';
@@ -8611,7 +8652,7 @@
     }
 
     function abrirRevisaoPendente(email) {
-      var pendencias = JSON.parse(localStorage.getItem('ironqi_protocolos_analise') || '[]');
+      var pendencias = _st.protocolos;
       var meuEmail = localStorage.getItem('ironqi_logado') || localStorage.getItem('ironqi_personal_logado');
       for (var i = 0; i < pendencias.length; i++) {
         if (pendencias[i].alunoEmail !== email || pendencias[i].status !== 'pendente_aprovacao') continue;
@@ -8635,7 +8676,7 @@
     });
 
     function verFichaAluno(email) {
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       var aprovado = null;
       for (var i = 0; i < pendentes.length; i++) {
         if (pendentes[i].alunoEmail === email && pendentes[i].status === 'approved' && pendentes[i].protocolo) {
@@ -8661,7 +8702,7 @@
     var _senhaAlunoEmail = '';
     function alterarSenhaAluno(email) {
       _senhaAlunoEmail = email;
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var nome = (usuarios[email] && usuarios[email].dados && usuarios[email].dados.nome) || email.split('@')[0];
       document.getElementById('modal-senha-aluno-info').textContent = 'Aluno: ' + nome + ' (' + email + ')';
       document.getElementById('modal-senha-input').value = Math.random().toString(36).slice(2, 8);
@@ -8672,10 +8713,10 @@
       if (!email) return;
       var novaSenha = document.getElementById('modal-senha-input').value.trim();
       if (!novaSenha) { alert('Digite uma senha.'); return; }
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       if (!usuarios[email]) usuarios[email] = { senha: '', dados: {} };
       usuarios[email].senha = novaSenha;
-      localStorage.setItem('ironqi_usuarios', JSON.stringify(usuarios));
+      _st.usuarios = usuarios;
       alert('Senha alterada com sucesso para: ' + email);
       fecharModalSenha();
     }
@@ -8686,12 +8727,12 @@
 
     function desvincularAluno(email) {
       if (!confirm('Desvincular aluno ' + email + '? Ele passará a ser autônomo.')) return;
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       if (usuarios[email] && usuarios[email].dados) {
         delete usuarios[email].dados.personal_vinculado;
         usuarios[email].dados.tipo = 'autonomo';
         usuarios[email].dados.perfil = 'aluno_autonomo';
-        localStorage.setItem('ironqi_usuarios', JSON.stringify(usuarios));
+        _st.usuarios = usuarios;
         var personalEmail = localStorage.getItem('ironqi_logado');
         renderKanban(personalEmail, usuarios);
       }
@@ -8756,7 +8797,7 @@
       // Role-based visibility
       var email = localStorage.getItem('ironqi_logado') || localStorage.getItem('ironqi_personal_logado');
       var isPersonal = !!localStorage.getItem('ironqi_personal_logado');
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var userData = usuarios[email] ? (usuarios[email].dados || {}) : {};
       var perfil = userData.perfil || userData.tipo || '';
       var isAdmin = perfil === 'admin' || !!document.getElementById('page-admin') && document.getElementById('page-admin').classList.contains('active');
@@ -8788,7 +8829,7 @@
 
       var email = localStorage.getItem('ironqi_logado') || localStorage.getItem('ironqi_personal_logado');
       var isPersonal = !!localStorage.getItem('ironqi_personal_logado');
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var userData = usuarios[email] ? (usuarios[email].dados || {}) : {};
       var perfil = userData.perfil || userData.tipo || '';
       var isAdmin = perfil === 'admin' || !!document.getElementById('page-admin') && document.getElementById('page-admin').classList.contains('active');
@@ -8890,9 +8931,9 @@
       if (observacoes) entry.observacoes = observacoes;
 
       // Salva no localStorage (demo / fallback)
-      var historico = JSON.parse(localStorage.getItem('ironqi_historico_' + email) || '[]');
+      var historico = (_st.historico[email] || []);
       historico.push(entry);
-      localStorage.setItem('ironqi_historico_' + email, JSON.stringify(historico));
+      _st.historico[email] = historico;
 
       // Salva no Firestore subcoleção historico_treinos
       if (!isDemo && db && email) {
@@ -9098,7 +9139,7 @@
 
       var email = localStorage.getItem('ironqi_logado') || localStorage.getItem('ironqi_personal_logado');
       var observacoes = document.getElementById('observacoes-treino').value.trim();
-      var historico = JSON.parse(localStorage.getItem('ironqi_historico_' + email) || '[]');
+      var historico = (_st.historico[email] || []);
       var entry = {
         data: dataStr,
         treino: treinoLetra,
@@ -9106,7 +9147,7 @@
       };
       if (observacoes) entry.observacoes = observacoes;
       historico.push(entry);
-      localStorage.setItem('ironqi_historico_' + email, JSON.stringify(historico));
+      _st.historico[email] = historico;
 
       alert('Treino concluído! Cargas salvas com sucesso.');
       navigate('dashboard');
@@ -9154,7 +9195,7 @@
           }
         }
         if (result && result.alerta) {
-          var notificacoes = JSON.parse(localStorage.getItem('ironqi_notificacoes') || '[]');
+          var notificacoes = _st.notificacoes;
           notificacoes.push({
             id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
             alunoEmail: email,
@@ -9165,7 +9206,7 @@
             data: new Date().toISOString(),
             lida: false
           });
-          localStorage.setItem('ironqi_notificacoes', JSON.stringify(notificacoes));
+          _st.notificacoes = notificacoes;
         }
       })
       .catch(function(err) {
@@ -9200,7 +9241,7 @@
       var uid = emailToUid[email];
       if (!uid) return;
       db.collection('usuarios').doc(uid).collection('historico_treinos').get().then(function(snap) {
-        var local = JSON.parse(localStorage.getItem('ironqi_historico_' + email) || '[]');
+        var local = (_st.historico[email] || []);
         var seen = {};
         local.forEach(function(e) { if (e.timestamp) seen[e.timestamp] = true; });
         var mudou = false;
@@ -9211,7 +9252,7 @@
         });
         if (mudou) {
           local.sort(function(a, b) { return new Date(a.timestamp) - new Date(b.timestamp); });
-          localStorage.setItem('ironqi_historico_' + email, JSON.stringify(local));
+          _st.historico[email] = local;
         }
         if (cb) cb(mudou);
       }).catch(function(e) { console.warn('Erro ao carregar histórico do Firestore:', e.code || e); });
@@ -9236,7 +9277,7 @@
     }
 
     function _renderEvolucao(email) {
-      var historico = JSON.parse(localStorage.getItem('ironqi_historico_' + email) || '[]');
+      var historico = (_st.historico[email] || []);
       var empty = document.getElementById('evolucao-empty');
       var chartArea = document.getElementById('evolucao-chart-area');
       var select = document.getElementById('evolucao-select');
@@ -9374,7 +9415,7 @@
     (function startCountdown() {
       const el = document.getElementById('countdown');
       if (!el) return;
-      var trialCfg = JSON.parse(localStorage.getItem('ironqi_trial_config') || '{"ativo":true,"duracao":48}');
+      var trialCfg = _st.trialConfig;
       var horas = trialCfg.duracao || 48;
       const end = Date.now() + horas * 60 * 60 * 1000;
       var _cdInterval = null;
@@ -9413,7 +9454,7 @@
       }
       var email = localStorage.getItem('ironqi_logado') || localStorage.getItem('ironqi_personal_logado');
       if (!email) return;
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var userData = usuarios[email] ? (usuarios[email].dados || {}) : {};
       var perfil = userData.perfil || userData.tipo || '';
       var isPersonal = !!localStorage.getItem('ironqi_personal_logado');
@@ -9439,13 +9480,13 @@
         planosAluno.style.display = 'flex';
         selecionarCategoriaPlano('aluno');
         var _trialDiv = document.getElementById('planos-trial-aluno');
-        if (_trialDiv) _trialDiv.style.display = trialExpirado(email) || !localStorage.getItem('ironqi_plano_' + email) ? '' : 'none';
+        if (_trialDiv) _trialDiv.style.display = trialExpirado(email) || !_st.planos[email] ? '' : 'none';
       } else if (perfil === 'personal' || perfil.indexOf('personal_') === 0) {
         tabs.style.display = 'none';
         planosPersonal.style.display = 'flex';
         selecionarCategoriaPlano('personal');
       } else {
-        perfil = localStorage.getItem('ironqi_plano_' + email) || '';
+        perfil = _st.planos[email] || '';
         if (perfil.indexOf('personal_') === 0) {
           perfil = 'personal';
         } else if (perfil.indexOf('aluno_') === 0) {
@@ -9477,18 +9518,18 @@
       if (!email && auth && auth.currentUser) email = auth.currentUser.email;
       if (!email) { alert('Faça login primeiro.'); return; }
       var nome = planoNomes[tipo] || tipo;
-      localStorage.setItem('ironqi_plano_' + email, tipo);
+      _st.planos[email] = tipo;
       // Define vencimento da assinatura (30 dias) — planos grátis não vencem
       var _vence = (tipo === 'personal_free') ? '' : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-      if (_vence) localStorage.setItem('ironqi_plano_vencimento_' + email, _vence);
-      else localStorage.removeItem('ironqi_plano_vencimento_' + email);
+      if (_vence) _st.planoVencimento[email] = _vence;
+      else delete _st.planoVencimento[email];
       // Persiste no Firestore para sync cross-device
       if (!isDemo && db) {
         var _pUid = (auth && auth.currentUser) ? auth.currentUser.uid : emailToUid[email];
         if (_pUid) db.collection('usuarios').doc(_pUid).update({ plano: tipo, planoVencimento: _vence || null }).catch(function(e) { console.warn('Firestore plano update error:', e); });
       }
       alert('✅ Assinatura ' + nome + ' ativada com sucesso!');
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var user = usuarios[email];
       var dados = user && user.dados ? user.dados : {};
       var perfil = dados.perfil || dados.tipo || (tipo.indexOf('personal_') === 0 ? 'personal' : '');
@@ -9513,15 +9554,15 @@
       var email = localStorage.getItem('ironqi_logado');
       if (!email) return;
       var expira = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-      localStorage.setItem('ironqi_plano_' + email, 'trial');
-      localStorage.setItem('ironqi_trial_expira_' + email, expira);
+      _st.planos[email] = 'trial';
+      _st.trialExpira[email] = expira;
       if (!isDemo && db && auth && auth.currentUser) {
         db.collection('usuarios').doc(auth.currentUser.uid).update({
           plano: 'trial',
           trialExpira: expira
         }).catch(function(e) { console.warn('Firestore trial error:', e); });
       }
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var perfil = (usuarios[email] && usuarios[email].dados && usuarios[email].dados.perfil) || 'aluno_autonomo';
       navigate('dashboard');
       atualizarSidebar();
@@ -9529,17 +9570,17 @@
 
     function trialExpirado(email) {
       if (!email) return false;
-      if (localStorage.getItem('ironqi_plano_' + email) !== 'trial') return false;
-      var expira = localStorage.getItem('ironqi_trial_expira_' + email);
+      if (_st.planos[email] !== 'trial') return false;
+      var expira = _st.trialExpira[email];
       return !expira || new Date() > new Date(expira);
     }
 
     // Vencimento de planos pagos (assinaturas mensais). Planos grátis/trial não vencem aqui.
     function planoVencido(email) {
       if (!email) return false;
-      var plano = localStorage.getItem('ironqi_plano_' + email) || '';
+      var plano = _st.planos[email] || '';
       if (!plano || plano === 'trial' || plano === 'personal_free') return false;
-      var vence = localStorage.getItem('ironqi_plano_vencimento_' + email);
+      var vence = _st.planoVencimento[email];
       if (!vence) return false; // sem data registrada (assinatura legada) → não bloqueia
       return new Date() > new Date(vence);
     }
@@ -9548,8 +9589,8 @@
     function verificarAcessoPlano() {
       var email = localStorage.getItem('ironqi_logado');
       if (!email) return false;
-      var plano = localStorage.getItem('ironqi_plano_' + email) || '';
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var plano = _st.planos[email] || '';
+      var usuarios = _st.usuarios;
       var perfil = (usuarios[email] && usuarios[email].dados && usuarios[email].dados.perfil) || '';
 
       // aluno_personal herda plano do personal — não bloqueia aqui
@@ -9600,7 +9641,7 @@
     function getPlanoUsuario() {
       var email = localStorage.getItem('ironqi_logado');
       if (!email) return null;
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var user = usuarios[email];
       var dados = user && user.dados ? user.dados : {};
       var perfil = dados.perfil || dados.tipo || '';
@@ -9609,13 +9650,13 @@
       // (aluno_autonomo tem plano próprio, não herda o plano do Lukas)
       if (perfil === 'aluno_personal' || perfil === 'alunoPersonal') {
         var personalEmail = dados.personal_vinculado || PERSONAL_PRINCIPAL;
-        var personalPlan = localStorage.getItem('ironqi_plano_' + personalEmail);
+        var personalPlan = _st.planos[personalEmail];
         // Tenta o cache local do usuário do personal (populado pelo sincronizarPlanoPersonal)
         if (!personalPlan) {
           var pUser = usuarios[personalEmail];
           if (pUser && pUser.dados && pUser.dados.plano) {
             personalPlan = pUser.dados.plano;
-            localStorage.setItem('ironqi_plano_' + personalEmail, personalPlan);
+            _st.planos[personalEmail] = personalPlan;
           }
         }
         if (personalPlan === 'personal_elite') return 'aluno_elite';
@@ -9625,14 +9666,14 @@
       }
 
       // Demais perfis: verifica plano próprio (também lê campo 'plano' sincronizado do Firestore)
-      var plano = localStorage.getItem('ironqi_plano_' + email) || dados.plano || null;
+      var plano = _st.planos[email] || dados.plano || null;
       if (plano) {
-        if (!localStorage.getItem('ironqi_plano_' + email)) localStorage.setItem('ironqi_plano_' + email, plano);
+        if (!_st.planos[email]) _st.planos[email] = plano;
         return plano;
       }
       // Fallback: aluno sem plano ganha START automaticamente
       if (perfil.indexOf('aluno_') === 0 || perfil === 'autonomo') {
-        localStorage.setItem('ironqi_plano_' + email, 'aluno_start');
+        _st.planos[email] = 'aluno_start';
         return 'aluno_start';
       }
       return null;
@@ -9672,14 +9713,14 @@
       var email = localStorage.getItem('ironqi_logado');
       if (!email) return { bloqueado: false };
       // Apenas alunos autônomos com plano START ou PRO têm limite
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var dados = (usuarios[email] && usuarios[email].dados) || {};
       var perfil = dados.perfil || dados.tipo || '';
       if (perfil !== 'aluno_autonomo' && perfil !== 'autonomo') return { bloqueado: false };
       var plano = getPlanoUsuario();
       var diasCiclo = (_CICLO_DIAS[tipo] || {})[plano];
       if (!diasCiclo) return { bloqueado: false };
-      var ultimoAceite = localStorage.getItem('ironqi_ultimo_aceite_' + tipo + '_' + email);
+      var ultimoAceite = _st.ultimoAceite[tipo + '_' + ];
       if (!ultimoAceite) return { bloqueado: false };
       var dataAceite = new Date(ultimoAceite);
       var diffDias = Math.floor((Date.now() - dataAceite) / 86400000);
@@ -9711,7 +9752,7 @@
       if (!bannerEl) return;
       var email = localStorage.getItem('ironqi_logado');
       if (!email) { bannerEl.style.display = 'none'; return; }
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var dados = (usuarios[email] && usuarios[email].dados) || {};
       var perfil = dados.perfil || dados.tipo || '';
       if (perfil !== 'aluno_autonomo' && perfil !== 'autonomo') { bannerEl.style.display = 'none'; return; }
@@ -9720,7 +9761,7 @@
       ['treino', 'dieta'].forEach(function(tipo) {
         var diasCiclo = (_CICLO_DIAS[tipo] || {})[plano];
         if (!diasCiclo) return;
-        var ultimoAceite = localStorage.getItem('ironqi_ultimo_aceite_' + tipo + '_' + email);
+        var ultimoAceite = _st.ultimoAceite[tipo + '_' + ];
         if (!ultimoAceite) return;
         var diffDias = Math.floor((Date.now() - new Date(ultimoAceite)) / 86400000);
         var diasRestantes = diasCiclo - diffDias;
@@ -9752,7 +9793,7 @@
     function verificarAjusteDisponivel(tipo) {
       var email = localStorage.getItem('ironqi_logado');
       if (!email) return { disponivel: false };
-      var ultimo = localStorage.getItem('ironqi_ultimo_ajuste_' + tipo + '_' + email);
+      var ultimo = _st.ultimoAjuste[tipo + '_' + ];
       if (!ultimo) return { disponivel: true };
       var diffDias = Math.floor((Date.now() - new Date(ultimo)) / 86400000);
       if (diffDias < 30) return { disponivel: false, diasRestantes: 30 - diffDias };
@@ -9780,7 +9821,7 @@
       var btnEl = document.getElementById(btnId);
       if (!btnEl) return;
       var email = localStorage.getItem('ironqi_logado');
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var dados = (usuarios[email] && usuarios[email].dados) || {};
       var perfil = dados.perfil || dados.tipo || '';
       var ehAluno = (perfil === 'aluno_autonomo' || perfil === 'autonomo' || perfil === 'aluno_personal');
@@ -9807,7 +9848,7 @@
     function assinarPRO() {
       var email = localStorage.getItem('ironqi_logado');
       if (email) {
-        localStorage.setItem('ironqi_plano_' + email, 'aluno_pro');
+        _st.planos[email] = 'aluno_pro';
       }
       document.getElementById('modal-upgrade').classList.remove('show');
       document.getElementById('modal-form').classList.remove('show');
@@ -9868,7 +9909,7 @@
       if (!email) return;
 
       // Carrega último IMC salvo
-      var historico = JSON.parse(localStorage.getItem('ironqi_imc_historico_' + email) || '[]');
+      var historico = (_st.imcHistorico[email] || []);
       if (historico.length > 0) {
         var ultimo = historico[historico.length - 1];
         var imcVal = ultimo.imc;
@@ -9901,7 +9942,7 @@
       // Preenche com últimos valores conhecidos
       var email = localStorage.getItem('ironqi_logado');
       if (email) {
-        var historico = JSON.parse(localStorage.getItem('ironqi_imc_historico_' + email) || '[]');
+        var historico = (_st.imcHistorico[email] || []);
         if (historico.length > 0) {
           var ultimo = historico[historico.length - 1];
           document.getElementById('imc-peso').value = ultimo.peso || '';
@@ -9938,13 +9979,13 @@
       // Salva no histórico
       var email = localStorage.getItem('ironqi_logado');
       if (email) {
-        var historico = JSON.parse(localStorage.getItem('ironqi_imc_historico_' + email) || '[]');
+        var historico = (_st.imcHistorico[email] || []);
         var hoje = new Date();
         var dataStr = hoje.getDate().toString().padStart(2,'0') + '/' +
           (hoje.getMonth()+1).toString().padStart(2,'0') + '/' +
           hoje.getFullYear();
         historico.push({ data: dataStr, peso: peso, imc: parseFloat(imc.toFixed(1)) });
-        localStorage.setItem('ironqi_imc_historico_' + email, JSON.stringify(historico));
+        _st.imcHistorico[email] = historico;
       }
 
       // Salva no Firestore
@@ -9970,7 +10011,7 @@
       var uid = emailToUid[email];
       if (!uid) return;
       db.collection('usuarios').doc(uid).collection('imc_historico').get().then(function(snap) {
-        var local = JSON.parse(localStorage.getItem('ironqi_imc_historico_' + email) || '[]');
+        var local = (_st.imcHistorico[email] || []);
         var seen = {};
         local.forEach(function(e) { seen[e.data + '|' + e.peso + '|' + e.imc] = true; });
         var mudou = false;
@@ -9985,7 +10026,7 @@
         if (mudou) {
           function _parseBR(s) { var p = String(s).split('/'); return new Date(p[2], (p[1]||1)-1, p[0]||1).getTime(); }
           local.sort(function(a, b) { return _parseBR(a.data) - _parseBR(b.data); });
-          localStorage.setItem('ironqi_imc_historico_' + email, JSON.stringify(local));
+          _st.imcHistorico[email] = local;
         }
         if (cb) cb(mudou);
       }).catch(function(e) { console.warn('Erro ao carregar IMC do Firestore:', e.code || e); });
@@ -10000,7 +10041,7 @@
     function _renderGraficoIMC() {
       var email = localStorage.getItem('ironqi_logado');
       if (!email) return;
-      var historico = JSON.parse(localStorage.getItem('ironqi_imc_historico_' + email) || '[]');
+      var historico = (_st.imcHistorico[email] || []);
       if (historico.length < 1) {
         document.getElementById('imc-evolucao-card').style.display = 'none';
         return;
@@ -10085,7 +10126,7 @@
       var email = localStorage.getItem('ironqi_logado');
       if (!email) return;
       if (!temAcessoPRO()) return;
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
+      var pendentes = _st.pendentes;
       var aprovadoDieta = null;
       for (var i = 0; i < pendentes.length; i++) {
         if (pendentes[i].alunoEmail === email &&
@@ -10302,11 +10343,7 @@
       document.getElementById('dieta-result-content').innerHTML = html;
       dietaGenerated = true;
 
-      // Salva no localStorage
-      var email = localStorage.getItem('ironqi_logado');
-      if (email) {
-        localStorage.setItem('ironqi_dieta_' + email, texto);
-      }
+      // dieta salva via protocolo no Firestore
     }
 
     function mostrarDietaMock(restricoesTexto, restricoesLivres) {
@@ -10409,7 +10446,7 @@
 
     function carregarHidratacao() {
       const hoje = new Date().toISOString().split('T')[0];
-      const dados = JSON.parse(localStorage.getItem('ironqi_agua') || '{}');
+      const dados = _st.agua;
       const total = dados[hoje] || 0;
       atualizarHidratacao(total);
     }
@@ -10436,14 +10473,14 @@
       }
 
       const hoje = new Date().toISOString().split('T')[0];
-      const dados = JSON.parse(localStorage.getItem('ironqi_agua') || '{}');
+      const dados = _st.agua;
       dados[hoje] = total;
-      localStorage.setItem('ironqi_agua', JSON.stringify(dados));
+      _st.agua = dados;
     }
 
     function addAgua() {
       const hoje = new Date().toISOString().split('T')[0];
-      const dados = JSON.parse(localStorage.getItem('ironqi_agua') || '{}');
+      const dados = _st.agua;
       const total = (dados[hoje] || 0) + PASSO_AGUA;
       atualizarHidratacao(total);
     }
@@ -10517,11 +10554,37 @@
       document.getElementById('admin-dash-date').textContent = new Date().toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
       var adminBanner = document.getElementById('admin-banner-trial');
       if (adminBanner) adminBanner.style.display = 'none';
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
-      var pendentes = JSON.parse(localStorage.getItem('ironqi_pendentes') || '[]');
-      var userStatus = JSON.parse(localStorage.getItem('ironqi_user_status') || '{}');
-      var planos = {};
-      Object.keys(localStorage).filter(function(k) { return k.indexOf('ironqi_plano_') === 0; }).forEach(function(k) { planos[k.replace('ironqi_plano_', '')] = localStorage.getItem(k); });
+
+      // Admin sempre carrega todos os usuários direto do Firestore (sem cache localStorage)
+      var _renderAdmin = function() {
+        var usuarios = _st.usuarios;
+        var pendentes = _st.pendentes;
+        var userStatus = _st.userStatus;
+        var planos = {};
+        Object.assign(planos, _st.planos);
+        _renderAdminDashboardInner(usuarios, pendentes, planos);
+      };
+      if (!isDemo && db && Object.keys(_st.usuarios).length === 0) {
+        db.collection('usuarios').get().then(function(snap) {
+          snap.forEach(function(doc) {
+            var d = doc.data();
+            if (d.email) {
+              _st.usuarios[d.email] = { dados: d, criadoEm: d.criadoEm || '' };
+              if (d.plano) _st.planos[d.email] = d.plano;
+              if (d.planoVencimento) _st.planoVencimento[d.email] = d.planoVencimento;
+              saveUidMapping(d.email, doc.id);
+            }
+          });
+          _renderAdmin();
+        }).catch(function(e) {
+          console.warn('Admin load users error:', e.code || e);
+          _renderAdmin();
+        });
+      } else {
+        _renderAdmin();
+      }
+    }
+    function _renderAdminDashboardInner(usuarios, pendentes, planos) {
       var keys = Object.keys(usuarios);
       var totalUsers = keys.length;
       var totalAutonomos = 0, totalPersonais = 0;
@@ -10545,7 +10608,7 @@
         atv.innerHTML = '<div style="color:#999;">📋 ' + getAlunoNome(ultimo.alunoEmail) + ' solicitou treino — ' + new Date(ultimo.dataGerado).toLocaleString('pt-BR') + '</div>';
       } else { atv.innerHTML = '<span style="color:#888;">Nenhuma atividade registrada.</span>'; }
 
-      var trialConf = JSON.parse(localStorage.getItem('ironqi_trial_config') || '{"ativo":true,"duracao":48,"mensagem":"Teste grátis de 48h — aproveite todos os recursos!"}');
+      var trialConf = _st.trialConfig;
       var trialBanner = document.getElementById('admin-banner-trial');
       if (trialBanner) {
         var trialStatus = trialConf.ativo ? 'TESTE GRÁTIS ATIVO' : 'TESTE GRÁTIS INATIVO';
@@ -10629,10 +10692,10 @@
     }
 
     function _renderAdminUsuarios() {
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
-      var userStatus = JSON.parse(localStorage.getItem('ironqi_user_status') || '{}');
+      var usuarios = _st.usuarios;
+      var userStatus = _st.userStatus;
       var planos = {};
-      Object.keys(localStorage).filter(function(k) { return k.indexOf('ironqi_plano_') === 0; }).forEach(function(k) { planos[k.replace('ironqi_plano_', '')] = localStorage.getItem(k); });
+      Object.assign(planos, _st.planos);
       var nomesPlanos = { 'aluno_start': 'Aluno START', 'aluno_pro': 'Aluno PRO', 'personal_free': 'Personal FREE', 'personal_pro': 'Personal PRO', 'personal_elite': 'Personal ELITE' };
       var busca = (document.getElementById('admin-users-search').value || '').toLowerCase().trim();
       var filtro = adminFiltroAtual || 'todos';
@@ -10685,8 +10748,8 @@
       // Sincroniza com Firestore em segundo plano e re-renderiza com dados atualizados
       if (isDemo || !db) return;
       db.collection('usuarios').get().then(function(snap) {
-        var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
-        var userStatus = JSON.parse(localStorage.getItem('ironqi_user_status') || '{}');
+        var usuarios = _st.usuarios;
+        var userStatus = _st.userStatus;
         var emailsNoFirestore = {};
         snap.forEach(function(doc) {
           var data = doc.data();
@@ -10697,18 +10760,18 @@
           if (!usuarios[email]) usuarios[email] = { senha: '', dados: {}, criadoEm: data.criadoEm || new Date().toISOString() };
           for (var k in data) { usuarios[email].dados[k] = data[k]; }
           userStatus[email] = data.status || 'ativo';
-          if (data.plano) localStorage.setItem('ironqi_plano_' + email, data.plano);
+          if (data.plano) _st.planos[email] = data.plano;
         });
         // Remove do localStorage qualquer usuário que não existe no Firestore
         Object.keys(usuarios).forEach(function(email) {
           if (!emailsNoFirestore[email]) {
             delete usuarios[email];
             delete userStatus[email];
-            localStorage.removeItem('ironqi_plano_' + email);
+            delete _st.planos[email];
           }
         });
-        localStorage.setItem('ironqi_usuarios', JSON.stringify(usuarios));
-        localStorage.setItem('ironqi_user_status', JSON.stringify(userStatus));
+        _st.usuarios = usuarios;
+        _st.userStatus = userStatus;
         _renderAdminUsuarios();
       }).catch(function(e) {
         console.warn('[IRONQI] Admin: erro ao sincronizar usuários do Firestore:', e.code || e);
@@ -10716,10 +10779,10 @@
     }
 
     function adminEditarUsuario(email) {
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var planos = {};
-      Object.keys(localStorage).filter(function(k) { return k.indexOf('ironqi_plano_') === 0; }).forEach(function(k) { planos[k.replace('ironqi_plano_', '')] = localStorage.getItem(k); });
-      var userStatus = JSON.parse(localStorage.getItem('ironqi_user_status') || '{}');
+      Object.assign(planos, _st.planos);
+      var userStatus = _st.userStatus;
       var u = usuarios[email]; if (!u) { alert('Usuário não encontrado.'); return; }
       var d = u.dados || {};
       document.getElementById('admin-user-edit-email').value = email;
@@ -10739,20 +10802,20 @@
       var status = document.getElementById('admin-user-edit-status').value;
       if (!email) return;
       // 1. Atualiza localStorage
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       if (usuarios[email]) {
         if (!usuarios[email].dados) usuarios[email].dados = {};
         usuarios[email].dados.nome = nome;
         usuarios[email].dados.sobrenome = sobrenome;
         usuarios[email].dados.status = status;
         if (plano) usuarios[email].dados.plano = plano;
-        localStorage.setItem('ironqi_usuarios', JSON.stringify(usuarios));
+        _st.usuarios = usuarios;
       }
-      if (plano) { localStorage.setItem('ironqi_plano_' + email, plano); }
-      else { localStorage.removeItem('ironqi_plano_' + email); }
-      var userStatus = JSON.parse(localStorage.getItem('ironqi_user_status') || '{}');
+      if (plano) { _st.planos[email] = plano; }
+      else { delete _st.planos[email]; }
+      var userStatus = _st.userStatus;
       userStatus[email] = status;
-      localStorage.setItem('ironqi_user_status', JSON.stringify(userStatus));
+      _st.userStatus = userStatus;
       document.getElementById('modal-admin-user').classList.remove('show');
       carregarAdminUsuarios();
       // 2. Persiste no Firestore
@@ -10766,17 +10829,17 @@
 
     function adminBloquearUsuario(email) {
       if (!confirm('Bloquear o usuário ' + email + '?')) return;
-      var userStatus = JSON.parse(localStorage.getItem('ironqi_user_status') || '{}');
+      var userStatus = _st.userStatus;
       userStatus[email] = 'bloqueado';
-      localStorage.setItem('ironqi_user_status', JSON.stringify(userStatus));
+      _st.userStatus = userStatus;
       carregarAdminUsuarios();
       _adminFsUpdate(email, { status: 'bloqueado' }, null, function(e) { console.warn('[IRONQI] Admin bloqueio Firestore erro:', e); });
     }
 
     function adminLiberarUsuario(email) {
-      var userStatus = JSON.parse(localStorage.getItem('ironqi_user_status') || '{}');
+      var userStatus = _st.userStatus;
       userStatus[email] = 'ativo';
-      localStorage.setItem('ironqi_user_status', JSON.stringify(userStatus));
+      _st.userStatus = userStatus;
       carregarAdminUsuarios();
       _adminFsUpdate(email, { status: 'ativo' }, null, function(e) { console.warn('[IRONQI] Admin liberar Firestore erro:', e); });
     }
@@ -10784,12 +10847,12 @@
     function adminExcluirUsuario(email) {
       if (!confirm('Excluir permanentemente o usuário ' + email + '?\n\nO usuário será bloqueado e não poderá fazer login.')) return;
       // Marca status 'excluido' no localStorage (a tela filtra e não exibe)
-      var userStatus = JSON.parse(localStorage.getItem('ironqi_user_status') || '{}');
+      var userStatus = _st.userStatus;
       userStatus[email] = 'excluido';
-      localStorage.setItem('ironqi_user_status', JSON.stringify(userStatus));
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      _st.userStatus = userStatus;
+      var usuarios = _st.usuarios;
       if (usuarios[email] && usuarios[email].dados) usuarios[email].dados.status = 'excluido';
-      localStorage.setItem('ironqi_usuarios', JSON.stringify(usuarios));
+      _st.usuarios = usuarios;
       carregarAdminUsuarios();
       // Marca no Firestore — bloqueia login do usuário
       _adminFsUpdate(email, { status: 'excluido' },
@@ -10813,7 +10876,7 @@
     };
 
     function obterPlanosConfig() {
-      var salvos = JSON.parse(localStorage.getItem('ironqi_admin_planos_config') || '{}');
+      var salvos = _st.adminPlanosConfig;
       var completo = {};
       Object.keys(PLANOS_PADRAO).forEach(function(id) {
         completo[id] = Object.assign({}, PLANOS_PADRAO[id], salvos[id] || {});
@@ -10857,7 +10920,7 @@
     function adminTogglePlanAtivo(id) {
       var planos = obterPlanosConfig();
       planos[id].ativo = !planos[id].ativo;
-      localStorage.setItem('ironqi_admin_planos_config', JSON.stringify(planos));
+      _st.adminPlanosConfig = planos;
       carregarAdminPlanos();
     }
 
@@ -10874,7 +10937,7 @@
     function adminRemoverRecurso(id, index) {
       var planos = obterPlanosConfig();
       planos[id].recursos.splice(index, 1);
-      localStorage.setItem('ironqi_admin_planos_config', JSON.stringify(planos));
+      _st.adminPlanosConfig = planos;
       carregarAdminPlanos();
     }
 
@@ -10901,20 +10964,20 @@
         });
         planos[id].recursos = recursos;
       });
-      localStorage.setItem('ironqi_admin_planos_config', JSON.stringify(planos));
+      _st.adminPlanosConfig = planos;
       alert('Planos salvos com sucesso!');
       carregarAdminPlanos();
     }
 
     function adminResetarPlanos() {
       if (!confirm('Restaurar todos os planos para os valores padrão?')) return;
-      localStorage.removeItem('ironqi_admin_planos_config');
+      
       carregarAdminPlanos();
     }
 
     /* ─── CUPONS ─── */
     function carregarAdminCupons() {
-      var cupons = JSON.parse(localStorage.getItem('ironqi_cupons') || '[]');
+      var cupons = _st.cupons;
       var html = '';
       cupons.forEach(function(c, i) {
         var val = new Date(c.validade + 'T23:59:59');
@@ -10955,10 +11018,10 @@
       var status = document.getElementById('cupom-status').value;
       if (!codigo || !desconto || !validade) { alert('Preencha todos os campos.'); return; }
       if (desconto < 1 || desconto > 100) { alert('Desconto deve ser entre 1% e 100%.'); return; }
-      var cupons = JSON.parse(localStorage.getItem('ironqi_cupons') || '[]');
+      var cupons = _st.cupons;
       if (cupons.some(function(c) { return c.codigo === codigo; })) { alert('Já existe um cupom com este código.'); return; }
       cupons.push({ codigo: codigo, desconto: desconto, validade: validade, limite: limite, status: status, usos: 0, criadoEm: new Date().toISOString() });
-      localStorage.setItem('ironqi_cupons', JSON.stringify(cupons));
+      _st.cupons = cupons;
       alert('Cupom ' + codigo + ' criado com sucesso!');
       document.getElementById('admin-cupom-form').style.display = 'none';
       document.getElementById('cupom-codigo').value = '';
@@ -10970,7 +11033,7 @@
     }
 
     function adminEditarCupom(index) {
-      var cupons = JSON.parse(localStorage.getItem('ironqi_cupons') || '[]');
+      var cupons = _st.cupons;
       var c = cupons[index];
       if (!c) return;
       document.getElementById('cupom-edit-original').value = index;
@@ -10985,14 +11048,14 @@
 
     function adminSalvarEdicaoCupom() {
       var index = parseInt(document.getElementById('cupom-edit-original').value, 10);
-      var cupons = JSON.parse(localStorage.getItem('ironqi_cupons') || '[]');
+      var cupons = _st.cupons;
       if (!cupons[index]) return;
       cupons[index].codigo = document.getElementById('cupom-edit-codigo').value.trim().toUpperCase();
       cupons[index].desconto = parseInt(document.getElementById('cupom-edit-desconto').value, 10);
       cupons[index].validade = document.getElementById('cupom-edit-validade').value;
       cupons[index].limite = parseInt(document.getElementById('cupom-edit-limite').value, 10) || 0;
       cupons[index].status = document.getElementById('cupom-edit-status').value;
-      localStorage.setItem('ironqi_cupons', JSON.stringify(cupons));
+      _st.cupons = cupons;
       document.getElementById('modal-admin-cupom').classList.remove('show');
       alert('Cupom atualizado com sucesso!');
       carregarAdminCupons();
@@ -11000,15 +11063,15 @@
 
     function adminExcluirCupom(index) {
       if (!confirm('Excluir este cupom permanentemente?')) return;
-      var cupons = JSON.parse(localStorage.getItem('ironqi_cupons') || '[]');
+      var cupons = _st.cupons;
       cupons.splice(index, 1);
-      localStorage.setItem('ironqi_cupons', JSON.stringify(cupons));
+      _st.cupons = cupons;
       carregarAdminCupons();
     }
 
     /* ─── TRIAL ─── */
     function obterTrialConfig() {
-      return JSON.parse(localStorage.getItem('ironqi_trial_config') || '{"ativo":true,"duracao":48,"mensagem":"Teste grátis de 48h — aproveite todos os recursos!"}');
+      return _st.trialConfig;
     }
 
     function carregarAdminTrial() {
@@ -11017,7 +11080,7 @@
       document.getElementById('trial-duracao').value = config.duracao;
       document.getElementById('trial-mensagem').value = config.mensagem;
       document.getElementById('admin-trial-duracao').textContent = config.duracao + 'h';
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var agora = Date.now();
       var emTrial = 0;
       var html = '';
@@ -11041,7 +11104,7 @@
     function adminToggleTrial() {
       var config = obterTrialConfig();
       config.ativo = !config.ativo;
-      localStorage.setItem('ironqi_trial_config', JSON.stringify(config));
+      _st.trialConfig = config;
       carregarAdminTrial();
     }
 
@@ -11050,20 +11113,20 @@
       config.ativo = document.getElementById('trial-toggle').classList.contains('active');
       config.duracao = parseInt(document.getElementById('trial-duracao').value, 10) || 48;
       config.mensagem = document.getElementById('trial-mensagem').value.trim();
-      localStorage.setItem('ironqi_trial_config', JSON.stringify(config));
+      _st.trialConfig = config;
       alert('Configurações de Trial salvas!');
       carregarAdminTrial();
     }
 
     /* ─── PERSONAIS ─── */
     function carregarAdminPersonais() {
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
-      var personalData = JSON.parse(localStorage.getItem('ironqi_personal_data') || '[]');
+      var usuarios = _st.usuarios;
+      var personalData = (_st.personalData && Array.isArray(_st.personalData) ? _st.personalData : []);
       var planos = {};
-      Object.keys(localStorage).filter(function(k) { return k.indexOf('ironqi_plano_') === 0; }).forEach(function(k) { planos[k.replace('ironqi_plano_', '')] = localStorage.getItem(k); });
+      Object.assign(planos, _st.planos);
       var nomesPlanos = { 'personal_free': 'FREE', 'personal_pro': 'PRO', 'personal_elite': 'ELITE' };
-      var userStatus = JSON.parse(localStorage.getItem('ironqi_user_status') || '{}');
-      var pessoalLimites = JSON.parse(localStorage.getItem('ironqi_personal_limites') || '{}');
+      var userStatus = _st.userStatus;
+      var pessoalLimites = _st.personalLimites;
       var emails = [];
       personalData.forEach(function(p) { if (emails.indexOf(p.email) === -1) emails.push(p.email); });
       Object.keys(usuarios).forEach(function(email) {
@@ -11113,11 +11176,11 @@
 
     function adminPersonalAlterarTipo(email, tipo) {
       // 1. Atualiza localStorage
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       if (usuarios[email]) {
         if (!usuarios[email].dados) usuarios[email].dados = {};
         usuarios[email].dados.tipoPersonal = tipo;
-        localStorage.setItem('ironqi_usuarios', JSON.stringify(usuarios));
+        _st.usuarios = usuarios;
       }
       // 2. Se virou Principal: substitui o PP anterior e atualiza configuracoes
       if (tipo === 'personal_principal') {
@@ -11126,10 +11189,9 @@
         if (_antigoPP && _antigoPP !== email && usuarios[_antigoPP]) {
           if (!usuarios[_antigoPP].dados) usuarios[_antigoPP].dados = {};
           usuarios[_antigoPP].dados.tipoPersonal = 'personal_interno';
-          localStorage.setItem('ironqi_usuarios', JSON.stringify(usuarios));
+          _st.usuarios = usuarios;
         }
         PERSONAL_PRINCIPAL = email;
-        localStorage.setItem('ironqi_personal_principal', email);
         if (!isDemo && db) {
           db.collection('configuracoes').doc('sistema').set({ personalPrincipal: email }, { merge: true })
             .then(function() { alert('✅ ' + email + ' definido como Personal Principal.\nNovos alunos autônomos serão direcionados a ele.'); })
@@ -11143,7 +11205,7 @@
         // Reverte o select no localStorage para o valor anterior
         if (usuarios[email] && usuarios[email].dados) {
           usuarios[email].dados.tipoPersonal = 'personal_principal';
-          localStorage.setItem('ironqi_usuarios', JSON.stringify(usuarios));
+          _st.usuarios = usuarios;
         }
         carregarAdminPersonais();
         return;
@@ -11167,46 +11229,46 @@
     }
 
     function adminPersonalAlterarLimite(email) {
-      var pessoalLimites = JSON.parse(localStorage.getItem('ironqi_personal_limites') || '{}');
+      var pessoalLimites = _st.personalLimites;
       var atual = pessoalLimites[email] || 0;
       var novo = prompt('Alterar limite de alunos para ' + email + ':\n(0 = ilimitado)', atual);
       if (novo === null) return;
       var num = parseInt(novo, 10);
       if (isNaN(num) || num < 0) { alert('Valor inválido.'); return; }
       pessoalLimites[email] = num;
-      localStorage.setItem('ironqi_personal_limites', JSON.stringify(pessoalLimites));
+      _st.personalLimites = pessoalLimites;
       carregarAdminPersonais();
     }
 
     function adminPersonalBloquear(email) {
       if (!confirm('Bloquear personal ' + email + '?')) return;
-      var userStatus = JSON.parse(localStorage.getItem('ironqi_user_status') || '{}');
+      var userStatus = _st.userStatus;
       userStatus[email] = 'bloqueado';
-      localStorage.setItem('ironqi_user_status', JSON.stringify(userStatus));
+      _st.userStatus = userStatus;
       carregarAdminPersonais();
     }
 
     function adminPersonalLiberar(email) {
-      var userStatus = JSON.parse(localStorage.getItem('ironqi_user_status') || '{}');
+      var userStatus = _st.userStatus;
       userStatus[email] = 'ativo';
-      localStorage.setItem('ironqi_user_status', JSON.stringify(userStatus));
+      _st.userStatus = userStatus;
       carregarAdminPersonais();
     }
 
     function adminPersonalUpgrade(email) {
       var planos = {};
-      Object.keys(localStorage).filter(function(k) { return k.indexOf('ironqi_plano_') === 0; }).forEach(function(k) { planos[k.replace('ironqi_plano_', '')] = localStorage.getItem(k); });
+      Object.assign(planos, _st.planos);
       var atual = planos[email] || 'personal_free';
       var opcoes = { 'personal_free': 'FREE (Grátis)', 'personal_pro': 'PRO (R$39,90)', 'personal_elite': 'ELITE (R$79,90)' };
       var nova = prompt('Alterar plano de ' + email + ':\nAtual: ' + (opcoes[atual] || atual) + '\n\nDigite: personal_pro, personal_elite ou personal_free', atual);
       if (!nova) return;
       if (!opcoes[nova]) { alert('Plano inválido. Use: personal_free, personal_pro ou personal_elite'); return; }
-      localStorage.setItem('ironqi_plano_' + email, nova);
+      _st.planos[email] = nova;
       carregarAdminPersonais();
     }
 
     function carregarAdminComissoes() {
-      var comissoes = JSON.parse(localStorage.getItem('ironqi_comissoes') || '[]');
+      var comissoes = _st.comissoes;
       // Agrupa por personalEmail
       var porPersonal = {};
       comissoes.forEach(function(c) {
@@ -11222,7 +11284,7 @@
 
       // Carrega comissoes_pagas do Firestore, merge com localStorage e renderiza
       function _renderComPagas() {
-        var lsPagas = JSON.parse(localStorage.getItem('ironqi_comissoes_pagas') || '{}');
+        var lsPagas = _st.comissoesPagas;
         if (!isDemo && db) {
           db.collection('configuracoes').doc('comissoes_pagas').get().then(function(doc) {
             var fsPagas = doc.exists ? (doc.data() || {}) : {};
@@ -11230,7 +11292,7 @@
             Object.keys(fsPagas).forEach(function(k) {
               merged[k] = Math.max(parseFloat(merged[k] || 0), parseFloat(fsPagas[k] || 0));
             });
-            localStorage.setItem('ironqi_comissoes_pagas', JSON.stringify(merged));
+            _st.comissoesPagas = merged;
             renderAdminComissoesTabela(porPersonal, merged);
           }).catch(function() { renderAdminComissoesTabela(porPersonal, lsPagas); });
         } else {
@@ -11249,10 +11311,10 @@
               if (d.tipo === 'treino') porPersonal[d.personalEmail].treinos++;
               else porPersonal[d.personalEmail].dietas++;
               porPersonal[d.personalEmail].totalGerado += (d.valor || 0);
-              var lc = JSON.parse(localStorage.getItem('ironqi_comissoes') || '[]');
+              var lc = _st.comissoes;
               if (!lc.some(function(c) { return c.firestoreId === doc.id; })) {
                 lc.push({ id: 'comm_' + doc.id, firestoreId: doc.id, personalEmail: d.personalEmail, alunoEmail: d.alunoEmail, tipo: d.tipo, valor: d.valor || 0, status: d.status, protocoloId: d.protocoloId || '', dataPago: d.dataPago || null, dataConfirmado: d.dataConfirmado && d.dataConfirmado.toDate ? d.dataConfirmado.toDate().toISOString() : new Date().toISOString() });
-                localStorage.setItem('ironqi_comissoes', JSON.stringify(lc));
+                _st.comissoes = lc;
               }
             }
           });
@@ -11264,7 +11326,7 @@
     }
 
     function renderAdminComissoesTabela(porPersonal, comissoesPagas) {
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var emails = Object.keys(porPersonal).filter(function(e) { return pessoalTemComissao(e); });
       document.getElementById('admin-comissoes-count').textContent = emails.length + ' personal' + (emails.length !== 1 ? 'is' : '');
       var html = '';
@@ -11301,7 +11363,7 @@
       var ctx = canvas.getContext('2d');
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       if (emails.length === 0) { ctx.fillStyle = '#555'; ctx.font = '13px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('Nenhum dado disponível', canvas.width / 2, 80); return; }
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var barW = Math.min(60, Math.floor((canvas.width - 40) / emails.length) - 10);
       var maxVal = 1;
       emails.forEach(function(e) { if (porPersonal[e].totalGerado > maxVal) maxVal = porPersonal[e].totalGerado; });
@@ -11335,9 +11397,9 @@
 
     function adminMarcarComissaoPaga(email, valor) {
       if (!confirm('Marcar R$' + valor.toFixed(0) + ' como pago para ' + email + '?')) return;
-      var comissoesPagas = JSON.parse(localStorage.getItem('ironqi_comissoes_pagas') || '{}');
+      var comissoesPagas = _st.comissoesPagas;
       comissoesPagas[email] = (parseFloat(comissoesPagas[email] || 0) + valor);
-      localStorage.setItem('ironqi_comissoes_pagas', JSON.stringify(comissoesPagas));
+      _st.comissoesPagas = comissoesPagas;
       if (!isDemo && db) {
         db.collection('configuracoes').doc('comissoes_pagas').set(comissoesPagas, { merge: true })
           .catch(function(e) { console.warn('Erro ao salvar pagamento no Firestore:', e); });
@@ -11350,10 +11412,10 @@
     var adminRelChart = {};
 
     function carregarAdminRelatorios() {
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
-      var userStatus = JSON.parse(localStorage.getItem('ironqi_user_status') || '{}');
+      var usuarios = _st.usuarios;
+      var userStatus = _st.userStatus;
       var planos = {};
-      Object.keys(localStorage).filter(function(k) { return k.indexOf('ironqi_plano_') === 0; }).forEach(function(k) { planos[k.replace('ironqi_plano_', '')] = localStorage.getItem(k); });
+      Object.assign(planos, _st.planos);
       var receitaMap = { 'aluno_start': 19.90, 'aluno_pro': 29.90, 'personal_pro': 39.90, 'personal_elite': 79.90 };
       var receita = 0;
       var contPlano = {};
@@ -11402,10 +11464,10 @@
     }
 
     function adminExportarCSV() {
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
-      var userStatus = JSON.parse(localStorage.getItem('ironqi_user_status') || '{}');
+      var usuarios = _st.usuarios;
+      var userStatus = _st.userStatus;
       var planos = {};
-      Object.keys(localStorage).filter(function(k) { return k.indexOf('ironqi_plano_') === 0; }).forEach(function(k) { planos[k.replace('ironqi_plano_', '')] = localStorage.getItem(k); });
+      Object.assign(planos, _st.planos);
       var linhas = ['"Nome","Email","Tipo","Plano","Status","Cadastro"'];
       Object.keys(usuarios).forEach(function(email) {
         var u = usuarios[email]; var d = u.dados || {};
@@ -11424,10 +11486,10 @@
     }
 
     function adminExportarExcel() {
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
-      var userStatus = JSON.parse(localStorage.getItem('ironqi_user_status') || '{}');
+      var usuarios = _st.usuarios;
+      var userStatus = _st.userStatus;
       var planos = {};
-      Object.keys(localStorage).filter(function(k) { return k.indexOf('ironqi_plano_') === 0; }).forEach(function(k) { planos[k.replace('ironqi_plano_', '')] = localStorage.getItem(k); });
+      Object.assign(planos, _st.planos);
       var linhas = ['<table><tr><th>Nome</th><th>Email</th><th>Tipo</th><th>Plano</th><th>Status</th><th>Cadastro</th></tr>'];
       Object.keys(usuarios).forEach(function(email) {
         var u = usuarios[email]; var d = u.dados || {};
@@ -11448,17 +11510,17 @@
 
     /* ─── CONFIGURAÇÕES ─── */
     function carregarAdminConfig() {
-      var config = JSON.parse(localStorage.getItem('ironqi_config_geral') || '{}');
+      var config = _st.configGeral;
       document.getElementById('config-nome-sistema').value = config.nomeSistema || 'IRONIQA';
       document.getElementById('config-logo').value = config.logo || 'logo.webp';
       document.getElementById('config-cor-principal').value = config.corPrincipal || '#CCFF00';
       document.getElementById('config-whatsapp').value = config.whatsapp || '';
       document.getElementById('config-email-suporte').value = config.emailSuporte || '';
       document.getElementById('config-manutencao').value = config.manutencao || '';
-      document.getElementById('admin-config-email').value = localStorage.getItem('ironqi_admin_config_email') || 'contato.ironiq@gmail.com';
-      document.getElementById('admin-config-senha').value = localStorage.getItem('ironqi_admin_config_senha') || 'Daniloiron2026';
-      var trialCfg = JSON.parse(localStorage.getItem('ironqi_trial_config') || '{"ativo":true,"duracao":48}');
-      document.getElementById('admin-config-trial').value = localStorage.getItem('ironqi_admin_config_trial') || trialCfg.duracao || '48';
+      document.getElementById('admin-config-email').value = 'contato.ironiq@gmail.com';
+      document.getElementById('admin-config-senha').value = '';
+      var trialCfg = _st.trialConfig;
+      document.getElementById('admin-config-trial').value = trialCfg.duracao || '48';
     }
 
     function adminSalvarConfig() {
@@ -11471,18 +11533,15 @@
         manutencao: document.getElementById('config-manutencao').value.trim()
       };
       if (!config.nomeSistema) { alert('Preencha o nome do sistema.'); return; }
-      localStorage.setItem('ironqi_config_geral', JSON.stringify(config));
+      _st.configGeral = config;
       var email = document.getElementById('admin-config-email').value.trim();
       var senha = document.getElementById('admin-config-senha').value.trim();
       var trial = document.getElementById('admin-config-trial').value;
       if (!email || !senha) { alert('Preencha e-mail e senha do admin.'); return; }
-      localStorage.setItem('ironqi_admin_config_email', email);
-      localStorage.setItem('ironqi_admin_config_senha', senha);
-      localStorage.setItem('ironqi_admin_config_trial', trial);
-      // atualiza também a config de trial no localStorage para sync
-      var trialCfg = JSON.parse(localStorage.getItem('ironqi_trial_config') || '{"ativo":true,"duracao":48,"mensagem":"Teste grátis de 48h — aproveite todos os recursos!"}');
+      // configurações de email/senha do admin não são salvas em localStorage (segurança)
+      var trialCfg = _st.trialConfig;
       trialCfg.duracao = parseInt(trial, 10) || 48;
-      localStorage.setItem('ironqi_trial_config', JSON.stringify(trialCfg));
+      _st.trialConfig = trialCfg;
       // salvar duracaoTrial no Firestore — coleção configuracoes, doc gerais
       if (!isDemo && db) {
         db.collection('configuracoes').doc('gerais').set({
@@ -11504,10 +11563,10 @@
     var CONTATO_ADMIN = 'contato.ironiq@gmail.com';
 
     function chatGetMsgs() {
-      return JSON.parse(localStorage.getItem('chat_messages') || '[]');
+      return _st.chatMsgs;
     }
     function chatSetMsgs(msgs) {
-      localStorage.setItem('chat_messages', JSON.stringify(msgs));
+      _st.chatMsgs = msgs;
     }
     function chatGetUserInfo() {
       var personalEmail = localStorage.getItem('ironqi_personal_logado');
@@ -11516,7 +11575,7 @@
       }
       var email = localStorage.getItem('ironqi_logado');
       if (!email) return null;
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var u = usuarios[email];
       var dados = u ? (u.dados || {}) : {};
       var tipo = dados.tipo || ({'aluno_autonomo':'autonomo','aluno_personal':'alunoPersonal','personal':'personal'})[dados.perfil] || 'autonomo';
@@ -11553,7 +11612,7 @@
       _chatPersonalListener = db.collection('mensagens_chat')
         .where('participants', 'array-contains', myEmail)
         .onSnapshot(function(snap) {
-          var all = JSON.parse(localStorage.getItem('chat_messages') || '[]');
+          var all = _st.chatMsgs;
           var existingIds = {};
           all.forEach(function(m) { existingIds[m.id] = true; });
           var mudou = false;
@@ -11568,7 +11627,7 @@
             }
           });
           if (mudou) {
-            localStorage.setItem('chat_messages', JSON.stringify(all));
+            _st.chatMsgs = all;
             chatRenderTwoCol(info);
           }
         }, function(err) {
@@ -11582,7 +11641,7 @@
       var isPersonal = info.role === 'personal';
       var myEmail = info.email;
       var msgs = chatGetMsgs();
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
 
       // montar contatos — alunos vinculados ao personal
       var contatos = {};
@@ -11712,7 +11771,7 @@
       var ehPrincipal = info && info.role === 'personal' && info.email === PERSONAL_PRINCIPAL;
       var mostrar = false;
       if (ehPrincipal && email) {
-        var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+        var usuarios = _st.usuarios;
         var d = (usuarios[email] && usuarios[email].dados) || {};
         var perfil = d.perfil || d.tipo || '';
         if (d.personal_vinculado === PERSONAL_PRINCIPAL || perfil === 'aluno_autonomo' || perfil === 'autonomo') mostrar = true;
@@ -11725,7 +11784,7 @@
       if (!alunoEmail) return;
       var myEmail = localStorage.getItem('ironqi_personal_logado') || localStorage.getItem('ironqi_logado');
       if (myEmail !== PERSONAL_PRINCIPAL) { alert('Apenas o Personal Principal pode atribuir o atendimento.'); return; }
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var atual = (usuarios[alunoEmail] && usuarios[alunoEmail].dados && usuarios[alunoEmail].dados.chat_atendente) || '';
       var alvo = prompt('Atribuir o atendimento de chat de ' + alunoEmail + ' a um Personal Interno.\nDigite o e-mail do interno (vazio = devolver ao Principal):', atual);
       if (alvo === null) return;
@@ -11734,7 +11793,7 @@
       if (!usuarios[alunoEmail]) usuarios[alunoEmail] = { dados: {} };
       if (!usuarios[alunoEmail].dados) usuarios[alunoEmail].dados = {};
       usuarios[alunoEmail].dados.chat_atendente = novoValor;
-      localStorage.setItem('ironqi_usuarios', JSON.stringify(usuarios));
+      _st.usuarios = usuarios;
       var _okMsg = '✅ Atendimento ' + (alvo ? 'atribuído a ' + alvo : 'devolvido ao Principal') + '.';
       if (!isDemo && db) {
         var _save = function(uid) {
@@ -11977,7 +12036,7 @@
       if (!meuEmail) return;
 
       // Determina o personal responsável pelo aluno
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var dados = (usuarios[meuEmail] && usuarios[meuEmail].dados) || {};
       // chat_atendente permite ao Personal Principal delegar o atendimento de um
       // aluno autônomo a um Personal Interno. Default: personal_vinculado (Principal).
@@ -12052,7 +12111,7 @@
 
     function chatAlunoIniciarLocal(meuEmail, personalEmail) {
       function tick() {
-        var all = JSON.parse(localStorage.getItem('chat_messages') || '[]');
+        var all = _st.chatMsgs;
         var msgs = all.filter(function(m) {
           return (m.sender === meuEmail   && m.receiver === personalEmail) ||
                  (m.sender === personalEmail && m.receiver === meuEmail);
@@ -12064,7 +12123,7 @@
             m.read = true; mudou = true;
           }
         });
-        if (mudou) localStorage.setItem('chat_messages', JSON.stringify(all));
+        if (mudou) _st.chatMsgs = all;
         if (msgs.length !== _chatAlunoLastCount) {
           _chatAlunoLastCount = msgs.length;
           chatAlunoRenderMensagens(msgs, meuEmail);
@@ -12078,7 +12137,7 @@
       // Mantém chat_messages em localStorage sincronizado com Firestore
       // para que o personal possa ver as mensagens no painel dele (que usa localStorage)
       try {
-        var all = JSON.parse(localStorage.getItem('chat_messages') || '[]');
+        var all = _st.chatMsgs;
         var ids = {};
         all.forEach(function(m) { ids[m.id] = true; });
         var mudou = false;
@@ -12089,7 +12148,7 @@
             mudou = true;
           }
         });
-        if (mudou) localStorage.setItem('chat_messages', JSON.stringify(all));
+        if (mudou) _st.chatMsgs = all;
       } catch(e) {}
     }
 
@@ -12174,9 +12233,9 @@
       var newId  = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
       // Sempre salva no localStorage (compatível com painel do personal)
-      var all = JSON.parse(localStorage.getItem('chat_messages') || '[]');
+      var all = _st.chatMsgs;
       all.push({ id: newId, sender: meuEmail, receiver: _chatAlunoPersonal, text: texto, timestamp: agora, read: false });
-      localStorage.setItem('chat_messages', JSON.stringify(all));
+      _st.chatMsgs = all;
 
       // Salva no Firestore para real-time
       if (!isDemo && db) {
@@ -12206,10 +12265,10 @@
     //  como subcoleção 1-doc-por-aluno. Só o personal vê a lista de
     //  presença; o aluno vê vagas restantes e o próprio status.
     // ═══════════════════════════════════════════════════════════
-    function agendaGetSlots() { return JSON.parse(localStorage.getItem('ironqi_agenda_slots') || '[]'); }
-    function agendaSetSlots(s) { localStorage.setItem('ironqi_agenda_slots', JSON.stringify(s)); }
-    function agendaGetCheckins() { return JSON.parse(localStorage.getItem('ironqi_agenda_checkins') || '[]'); }
-    function agendaSetCheckins(c) { localStorage.setItem('ironqi_agenda_checkins', JSON.stringify(c)); }
+    function agendaGetSlots() { return _st.agendaSlots || []; }
+    function agendaSetSlots(s) { _st.agendaSlots = s; }
+    function agendaGetCheckins() { return _st.agendaCheckins || []; }
+    function agendaSetCheckins(c) { _st.agendaCheckins = c; }
 
     function agendaToggleCapacidade() {
       var tipoEl = document.getElementById('agenda-tipo');
@@ -12321,7 +12380,7 @@
       var email = localStorage.getItem('ironqi_logado');
       var cont = document.getElementById('agenda-aluno-lista');
       if (!email || !cont) return;
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var dados = (usuarios[email] && usuarios[email].dados) || {};
       var personalEmail = dados.personal_vinculado;
       if (!personalEmail) { cont.innerHTML = '<div class="card" style="text-align:center;color:#888;">Você não está vinculado a um personal.</div>'; return; }
@@ -12363,7 +12422,7 @@
     function agendaCheckin(slotId) {
       var email = localStorage.getItem('ironqi_logado');
       if (!email) return;
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
+      var usuarios = _st.usuarios;
       var dados = (usuarios[email] && usuarios[email].dados) || {};
       var nome = ((dados.nome || '') + ' ' + (dados.sobrenome || '')).trim() || email.split('@')[0];
       var slots = agendaGetSlots();
