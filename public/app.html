@@ -2838,7 +2838,6 @@
                 <option value="aluno_autonomo">Aluno — Treino Autônomo</option>
                 <option value="aluno_personal">Aluno — Com Personal</option>
                 <option value="personal">Personal Trainer</option>
-                <option value="academia">Academia</option>
               </select>
             </div>
 
@@ -2874,18 +2873,6 @@
               <div>
                 <label for="reg-personal-email">E-mail do Personal Trainer *</label>
                 <input type="email" placeholder="personal@email.com" id="reg-personal-email">
-              </div>
-            </div>
-
-            <!-- ─── CAMPOS EXTRAS ACADEMIA ─── -->
-            <div id="reg-campos-academia" style="display:none;">
-              <div>
-                <label for="reg-nome-acad">Nome da Academia</label>
-                <input type="text" placeholder="Ex: Iron Fit" id="reg-nome-acad">
-              </div>
-              <div>
-                <label for="reg-cnpj">CNPJ</label>
-                <input type="text" placeholder="00.000.000/0001-00" id="reg-cnpj">
               </div>
             </div>
 
@@ -3229,7 +3216,7 @@
     <!--  PAGE CHAT — CHAT DINÂMICO                   -->
     <!-- ════════════════════════════════════════════ -->
     <div class="page" id="page-chat">
-      <!-- Two-column layout (personal / academia) -->
+      <!-- Two-column layout (personal) -->
       <div id="chat-twocol" style="display:none;flex:1;min-height:0;">
         <div class="chat-layout">
           <div class="chat-contacts" id="chat-contacts-panel">
@@ -3388,7 +3375,6 @@
         <div id="planos-categorias" style="display:flex; gap:6px; margin-bottom:16px; overflow-x:auto; scrollbar-width:none; padding-bottom:4px;">
           <button class="day-tab active" data-cat="aluno" onclick="selecionarCategoriaPlano('aluno')"><i data-lucide="user"></i> Aluno</button>
           <button class="day-tab" data-cat="personal" onclick="selecionarCategoriaPlano('personal')"><i data-lucide="target"></i> Personal</button>
-          <button class="day-tab" data-cat="academia" onclick="selecionarCategoriaPlano('academia')"><i data-lucide="building"></i> Academia</button>
         </div>
 
         <!-- ─── ALUNO ─── -->
@@ -3471,47 +3457,6 @@
           </div>
         </div>
 
-        <!-- ─── ACADEMIA ─── -->
-        <div id="planos-academia" class="planos-categoria" style="display:none;">
-          <div class="plan-card" style="border-color:#CCFF00;">
-            <h3>START</h3>
-            <div class="price">R$ 199<small>/mês</small></div>
-            <p style="font-size:12px; color:#888; margin-bottom:8px;">Até <strong style="color:#CCFF00;">100 alunos</strong></p>
-            <ul>
-              <li>Gestão completa de alunos</li>
-              <li>Painel administrativo</li>
-              <li>Cadastro pela recepção</li>
-            </ul>
-            <button class="btn btn-primary" onclick="assinarPlano('academia_start')">Assinar START</button>
-          </div>
-          <div class="plan-card highlight">
-            <div class="badge"><i data-lucide="flame"></i> MAIS POPULAR</div>
-            <h3>PRO</h3>
-            <div class="price">R$ 299<small>/mês</small></div>
-            <p style="font-size:12px; color:#888; margin-bottom:8px;">Até <strong style="color:#CCFF00;">300 alunos</strong></p>
-            <ul>
-              <li>Tudo do START</li>
-              <li>Mais alunos</li>
-              <li>Suporte prioritário</li>
-              <li>Relatórios avançados</li>
-            </ul>
-            <button class="btn btn-primary" onclick="assinarPlano('academia_pro')">Assinar PRO</button>
-          </div>
-          <div class="plan-card">
-            <h3>ELITE</h3>
-            <div class="price">R$ 499<small>/mês</small></div>
-            <p style="font-size:12px; color:#888; margin-bottom:8px;"><strong style="color:#CCFF00;">Ilimitado</strong></p>
-            <ul>
-              <li><i data-lucide="check-circle"></i> Gestão completa</li>
-              <li><i data-lucide="check-circle"></i> Cadastro pela recepção</li>
-              <li><i data-lucide="check-circle"></i> Benefício para retenção</li>
-              <li><i data-lucide="check-circle"></i> Painel administrativo</li>
-              <li><i data-lucide="check-circle"></i> Alunos ilimitados</li>
-              <li><i data-lucide="check-circle"></i> Suporte VIP</li>
-            </ul>
-            <button class="btn btn-primary" onclick="assinarPlano('academia_elite')">Assinar ELITE</button>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -4176,7 +4121,6 @@
             <button class="admin-nav-item" data-section="admin-usuarios" onclick="adminNav('admin-usuarios')"><span class="icon"><i data-lucide="users"></i></span> <span>Usuários</span></button>
             <button class="admin-nav-item" data-section="admin-planos" onclick="adminNav('admin-planos')"><span class="icon"><i data-lucide="credit-card"></i></span> <span>Planos</span></button>
             <button class="admin-nav-item" data-section="admin-personais" onclick="adminNav('admin-personais')"><span class="icon"><i data-lucide="dumbbell"></i></span> <span>Personais</span></button>
-            <button class="admin-nav-item" data-section="admin-academias" onclick="adminNav('admin-academias')"><span class="icon"><i data-lucide="building"></i></span> <span>Academias</span></button>
             <button class="admin-nav-item" data-section="admin-comissoes" onclick="adminNav('admin-comissoes')"><span class="icon"><i data-lucide="dollar-sign"></i></span> <span>Comissões</span></button>
             <button class="admin-nav-item" data-section="admin-config" onclick="adminNav('admin-config')"><span class="icon"><i data-lucide="settings"></i></span> <span>Configurações</span></button>
           </nav>
@@ -4220,7 +4164,6 @@
                 <button class="admin-filter-btn active" data-filter="todos" onclick="adminFiltrarUsuarios('todos')">Todos</button>
                 <button class="admin-filter-btn" data-filter="alunos" onclick="adminFiltrarUsuarios('alunos')">Alunos</button>
                 <button class="admin-filter-btn" data-filter="personais" onclick="adminFiltrarUsuarios('personais')">Personais</button>
-                <button class="admin-filter-btn" data-filter="academias" onclick="adminFiltrarUsuarios('academias')">Academias</button>
                 <button class="admin-filter-btn" data-filter="ativos" onclick="adminFiltrarUsuarios('ativos')">Ativos</button>
                 <button class="admin-filter-btn" data-filter="bloqueados" onclick="adminFiltrarUsuarios('bloqueados')">Bloqueados</button>
               </div>
@@ -4242,7 +4185,7 @@
                 <div class="admin-form-group"><label>Sobrenome</label><input type="text" id="admin-user-edit-sobrenome"></div>
               </div>
               <div class="admin-form-row">
-                <div class="admin-form-group"><label>Plano</label><select id="admin-user-edit-plano"><option value="">— Sem plano —</option><option value="aluno_start">Aluno START</option><option value="aluno_pro">Aluno PRO</option><option value="personal_free">Personal FREE</option><option value="personal_pro">Personal PRO</option><option value="personal_elite">Personal ELITE</option><option value="academia_start">Academia START</option><option value="academia_pro">Academia PRO</option><option value="academia_elite">Academia ELITE</option></select></div>
+                <div class="admin-form-group"><label>Plano</label><select id="admin-user-edit-plano"><option value="">— Sem plano —</option><option value="aluno_start">Aluno START</option><option value="aluno_pro">Aluno PRO</option><option value="personal_free">Personal FREE</option><option value="personal_pro">Personal PRO</option><option value="personal_elite">Personal ELITE</option></select></div>
                 <div class="admin-form-group"><label>Status</label><select id="admin-user-edit-status"><option value="ativo">Ativo</option><option value="bloqueado">Bloqueado</option></select></div>
               </div>
               <div style="display:flex;gap:8px;margin-top:16px;">
@@ -4269,12 +4212,6 @@
           <div id="admin-personais" class="admin-section">
             <div class="admin-header"><h2><i data-lucide="dumbbell"></i> Personais</h2><span style="font-size:12px;color:#555;" id="admin-personais-count"></span></div>
             <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Nome</th><th>Tipo</th><th>E-mail</th><th>Alunos</th><th>Plano</th><th>Limite</th><th>Status</th><th style="text-align:center;">Ações</th></tr></thead><tbody id="admin-personais-tbody"></tbody></table></div>
-          </div>
-
-          <!-- ─── ACADEMIAS ─── -->
-          <div id="admin-academias" class="admin-section">
-            <div class="admin-header"><h2><i data-lucide="building"></i> Academias</h2><span style="font-size:12px;color:#555;" id="admin-academias-count"></span></div>
-            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Academia</th><th>E-mail</th><th>CNPJ</th><th>Alunos</th><th>Plano</th><th>Limite</th><th>Status</th><th style="text-align:center;">Ações</th></tr></thead><tbody id="admin-academias-tbody"></tbody></table></div>
           </div>
 
           <!-- ─── COMISSÕES ─── -->
@@ -4367,14 +4304,13 @@
       var perfilBtnPlanos = document.getElementById('perfil-btn-planos');
       var ehAluno = perfil && (perfil === 'aluno' || perfil.indexOf('aluno_') === 0);
       var plano = getPlanoUsuario();
-      // Chat liberado para: aluno PRO/ELITE, aluno vinculado a personal, personais e academias.
+      // Chat liberado para: aluno PRO/ELITE, aluno vinculado a personal, personais.
       // START fica sem chat (só treinos e gráficos). NÃO usar early-return por "ehAluno":
       // isso escondia o chat até para o aluno PRO, que deve poder falar com o personal principal.
       var mostrarChat = (
         perfil === 'aluno_personal' ||
         plano === 'aluno_pro' || plano === 'aluno_elite' ||
-        (plano && plano.indexOf('personal_') === 0) ||
-        (plano && plano.indexOf('academia_') === 0)
+        (plano && plano.indexOf('personal_') === 0)
       );
       if (navChat) navChat.style.display = mostrarChat ? 'flex' : 'none';
       if (navChatSide) navChatSide.style.display = mostrarChat ? 'flex' : 'none';
@@ -4473,13 +4409,6 @@
           } else {
             navigate('personal-home');
           }
-          break;
-        case 'academia':
-          document.getElementById('bottom-nav').classList.add('show');
-          document.getElementById('bottom-nav-personal').classList.remove('show');
-          document.getElementById('sidebar-nav').classList.add('show');
-          document.getElementById('sidebar-nav-personal').classList.remove('show');
-          navigate('dashboard');
           break;
         case 'admin':
           document.getElementById('page-login').classList.remove('active');
@@ -4711,7 +4640,7 @@
       var isPersonal = !!localStorage.getItem('ironqi_personal_logado');
       var plano = isPersonal ? (planos[email] || '') : (getPlanoUsuario() || planos[email] || '');
       var planoNome = 'GRÁTIS';
-      if (plano.indexOf('pro') >= 0 || plano.indexOf('elite') >= 0) planoNome = plano.toUpperCase().replace('ALUNO_', '').replace('PERSONAL_', '').replace('ACADEMIA_', '');
+      if (plano.indexOf('pro') >= 0 || plano.indexOf('elite') >= 0) planoNome = plano.toUpperCase().replace('ALUNO_', '').replace('PERSONAL_', '');
       else if (plano) planoNome = plano.toUpperCase();
       var sideName = document.getElementById('sidebar-user-name');
       if (sideName) sideName.textContent = nome;
@@ -4953,10 +4882,8 @@
     function regToggleCampos() {
       var perfil = document.getElementById('reg-perfil').value;
       var isAluno = (perfil === 'aluno_autonomo' || perfil === 'aluno_personal');
-      var isAcademia = (perfil === 'academia');
       document.getElementById('reg-campos-aluno').style.display = isAluno ? 'block' : 'none';
       document.getElementById('reg-campo-personal').style.display = (perfil === 'aluno_personal') ? 'block' : 'none';
-      document.getElementById('reg-campos-academia').style.display = isAcademia ? 'block' : 'none';
     }
     document.addEventListener('DOMContentLoaded', function() {
       var sel = document.getElementById('reg-perfil');
@@ -4967,7 +4894,7 @@
       var nome = document.getElementById('reg-nome').value.trim();
       var email = document.getElementById('reg-email').value.trim();
       var perfil = document.getElementById('reg-perfil').value;
-      var tipoMap = { 'aluno_autonomo': 'autonomo', 'aluno_personal': 'alunoPersonal', 'personal': 'personal', 'academia': 'academia' };
+      var tipoMap = { 'aluno_autonomo': 'autonomo', 'aluno_personal': 'alunoPersonal', 'personal': 'personal' };
       var dados = { nome: nome, email: email, perfil: perfil, tipo: tipoMap[perfil] || 'autonomo' };
 
       if (perfil === 'aluno_autonomo' || perfil === 'aluno_personal') {
@@ -4986,11 +4913,6 @@
         if (perfil === 'aluno_autonomo') {
           dados.personal_vinculado = PERSONAL_PRINCIPAL || localStorage.getItem('ironqi_personal_principal') || '';
         }
-      } else if (perfil === 'academia') {
-        var nomeAcad = document.getElementById('reg-nome-acad').value.trim();
-        var cnpj = document.getElementById('reg-cnpj').value.trim();
-        if (nomeAcad) dados.nomeAcademia = nomeAcad;
-        if (cnpj) dados.cnpj = cnpj;
       }
       return dados;
     }
@@ -5033,9 +4955,6 @@
         localStorage.setItem('ironqi_usuarios', JSON.stringify(usuarios));
         localStorage.setItem('ironqi_logado', email);
         if (perfil === 'personal') localStorage.setItem('ironqi_personal_logado', email);
-        if (perfil === 'academia') {
-          localStorage.setItem('ironqi_plano_' + email, 'academia_basica');
-        }
         document.getElementById('page-landing').classList.remove('active');
         document.getElementById('page-cadastro').classList.remove('active');
         rotearPorPerfil(perfil, perfil === 'aluno_autonomo' || perfil === 'personal');
@@ -5055,15 +4974,11 @@
           localStorage.setItem('ironqi_logado', email);
           setFsUserData(email, dados);
           if (perfil === 'personal') localStorage.setItem('ironqi_personal_logado', email);
-          if (perfil === 'academia') localStorage.setItem('ironqi_plano_' + email, 'academia_basica');
 
           // Firestore write com retry automático — falha aqui não bloqueia o usuário
           var tentarEscreverPerfil = function(tentativa) {
             db.collection('usuarios').doc(uid).set(dados)
               .then(function() {
-                if (perfil === 'academia') {
-                  db.collection('usuarios').doc(uid).update({ plano: 'academia_basica' }).catch(function() {});
-                }
               })
               .catch(function(fsErr) {
                 console.warn('Firestore registro falhou (tentativa ' + tentativa + '):', fsErr.code);
@@ -5434,7 +5349,6 @@
       var _dados = _user && _user.dados ? _user.dados : {};
       var _perfil = _dados.perfil || _dados.tipo || '';
       if (_perfil === 'personal') { navigate('personal-home'); }
-      else if (_perfil === 'academia') { navigate('dashboard-academia'); }
       else { navigate('dashboard'); }
     }
 
@@ -5485,7 +5399,6 @@
       // REGRA 2: qualquer aluno tem personal_vinculado definido (autônomo → PERSONAL_PRINCIPAL; personal → email do personal)
       if (dados.personal_vinculado) return dados.personal_vinculado;
       if (perfil === 'aluno_personal' || perfil === 'alunoPersonal') return PERSONAL_PRINCIPAL;
-      if (dados.academiaVinculada || perfil === 'academia') return dados.academiaVinculada || PERSONAL_PRINCIPAL;
       return PERSONAL_PRINCIPAL;
     }
 
@@ -8082,7 +7995,6 @@
       else if (plano === 'aluno_pro') planoNome = 'Aluno PRO (R$29,90)';
       else if (plano === 'aluno_elite') planoNome = 'Aluno ELITE (R$49,90)';
       else if (plano.indexOf('personal_') === 0) { var pmap = { 'personal_pro':'Personal PRO (R$39,90)','personal_elite':'Personal ELITE (R$79,90)','personal_free':'Personal FREE' }; planoNome = pmap[plano] || plano; }
-      else if (plano.indexOf('academia_') === 0) { var amap = { 'academia_start':'Academia START (R$199)','academia_pro':'Academia PRO (R$299)','academia_elite':'Academia ELITE (R$499)' }; planoNome = amap[plano] || plano; }
       else if (plano) planoNome = plano;
       else planoNome = 'Nenhum plano ativo';
 
@@ -8146,9 +8058,6 @@
         personalTab('perfil');
         renderKanban(email, usuarios);
         carregarComissoesPersonal();
-      } else if (tipo === 'academia') {
-        resumoEl.textContent = (userData.nomeAcademia || 'Academia') + ' · ' + Object.keys(usuarios).length + ' alunos';
-        document.getElementById('perfil-about-text').textContent = (userData.sobre || 'Academia parceira IRONIQ, levando tecnologia e resultados para seus alunos.');
       } else {
         var peso = userData.peso || '—';
         var altura = userData.altura || (userData.altura_cm || '—');
@@ -8170,7 +8079,7 @@
       // Suporte prioritário
       var suporte = document.getElementById('perfil-suporte');
       var planoEfetivo = getPlanoUsuario() || plano;
-      if (planoEfetivo === 'aluno_pro' || (planoEfetivo && planoEfetivo.indexOf('personal_') === 0) || (planoEfetivo && planoEfetivo.indexOf('academia_') === 0)) {
+      if (planoEfetivo === 'aluno_pro' || (planoEfetivo && planoEfetivo.indexOf('personal_') === 0)) {
         suporte.style.display = 'block';
         var config = JSON.parse(localStorage.getItem('ironqi_config_geral') || '{}');
         var whatsapp = config.whatsapp || '';
@@ -8341,9 +8250,6 @@
       if (tipo === 'personal') {
         html += '<div class="bloco"><label>Nome</label><input id="modal-edit-nome" value="' + escHtml(userData.nome || '') + '"></div>';
         html += '<div class="bloco"><label>Registro / CREF</label><input id="modal-edit-registro" value="' + escHtml(userData.registro || '') + '"></div>';
-      } else if (tipo === 'academia') {
-        html += '<div class="bloco"><label>Nome da Academia</label><input id="modal-edit-nome-acad" value="' + escHtml(userData.nomeAcademia || '') + '"></div>';
-        html += '<div class="bloco"><label>CNPJ</label><input id="modal-edit-cnpj" value="' + escHtml(userData.cnpj || '') + '"></div>';
       } else {
         html +=
           '<div class="modal-edit-grid">' +
@@ -8387,9 +8293,6 @@
         if (tipo === 'personal') {
           d.nome = document.getElementById('modal-edit-nome').value.trim();
           d.registro = document.getElementById('modal-edit-registro').value.trim();
-        } else if (tipo === 'academia') {
-          d.nomeAcademia = document.getElementById('modal-edit-nome-acad').value.trim();
-          d.cnpj = document.getElementById('modal-edit-cnpj').value.trim();
         } else {
           d.nome = document.getElementById('modal-edit-nome').value.trim();
           d.sobrenome = document.getElementById('modal-edit-sobrenome').value.trim();
@@ -9519,12 +9422,10 @@
       var tabs = document.getElementById('planos-categorias');
       var planosAluno = document.getElementById('planos-aluno');
       var planosPersonal = document.getElementById('planos-personal');
-      var planosAcademia = document.getElementById('planos-academia');
 
       // Esconde todos primeiro
       planosAluno.style.display = 'none';
       planosPersonal.style.display = 'none';
-      planosAcademia.style.display = 'none';
       tabs.style.display = 'flex';
 
       if (perfil === 'aluno_personal') {
@@ -9543,16 +9444,10 @@
         tabs.style.display = 'none';
         planosPersonal.style.display = 'flex';
         selecionarCategoriaPlano('personal');
-      } else if (perfil === 'academia' || perfil.indexOf('academia_') === 0) {
-        tabs.style.display = 'none';
-        planosAcademia.style.display = 'flex';
-        selecionarCategoriaPlano('academia');
       } else {
         perfil = localStorage.getItem('ironqi_plano_' + email) || '';
         if (perfil.indexOf('personal_') === 0) {
           perfil = 'personal';
-        } else if (perfil.indexOf('academia_') === 0) {
-          perfil = 'academia';
         } else if (perfil.indexOf('aluno_') === 0) {
           perfil = 'aluno_autonomo';
         }
@@ -9560,10 +9455,6 @@
           tabs.style.display = 'none';
           planosPersonal.style.display = 'flex';
           selecionarCategoriaPlano('personal');
-        } else if (perfil === 'academia') {
-          tabs.style.display = 'none';
-          planosAcademia.style.display = 'flex';
-          selecionarCategoriaPlano('academia');
         } else if (perfil === 'aluno_autonomo') {
           tabs.style.display = 'none';
           planosAluno.style.display = 'flex';
@@ -9578,10 +9469,7 @@
       'aluno_elite': 'Aluno ELITE (R$49,90)',
       'personal_free': 'Personal FREE',
       'personal_pro': 'Personal PRO (R$39,90)',
-      'personal_elite': 'Personal ELITE (R$79,90)',
-      'academia_start': 'Academia START (R$199)',
-      'academia_pro': 'Academia PRO (R$299)',
-      'academia_elite': 'Academia ELITE (R$499)'
+      'personal_elite': 'Personal ELITE (R$79,90)'
     };
 
     function assinarPlano(tipo) {
@@ -9603,9 +9491,8 @@
       var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
       var user = usuarios[email];
       var dados = user && user.dados ? user.dados : {};
-      var perfil = dados.perfil || dados.tipo || (tipo.indexOf('personal_') === 0 ? 'personal' : tipo.indexOf('academia_') === 0 ? 'academia' : '');
+      var perfil = dados.perfil || dados.tipo || (tipo.indexOf('personal_') === 0 ? 'personal' : '');
       if (perfil === 'personal') { navigate('personal-home'); }
-      else if (perfil === 'academia') { navigate('dashboard-academia'); }
       else { navigate('dashboard'); }
     }
 
@@ -9667,7 +9554,7 @@
 
       // aluno_personal herda plano do personal — não bloqueia aqui
       if (perfil === 'aluno_personal' || perfil === 'alunoPersonal') return false;
-      // personal, academia e admin: verificar se tem plano
+      // personal e admin: verificar se tem plano
       if (perfil === 'personal') {
         // Sem plano definido = tier FREE (válido, "Até 2 alunos"). Não bloqueia o acesso.
         // Só bloqueia se um plano PAGO (personal_pro/elite) tiver vencido.
@@ -9757,8 +9644,8 @@
       if (!plano) return false;
       if (plano === 'aluno_pro' || plano === 'aluno_elite' || plano === 'pro') return true;
       if (plano === 'personal_free') return false;
-      // Planos personal e academia também têm acesso
-      if (plano.indexOf('personal_') === 0 || plano.indexOf('academia_') === 0) return true;
+      // Planos personal também têm acesso
+      if (plano.indexOf('personal_') === 0) return true;
       return false;
     }
 
@@ -10599,7 +10486,6 @@
       if (sectionId === 'admin-usuarios') carregarAdminUsuarios();
       if (sectionId === 'admin-planos') carregarAdminPlanos();
       if (sectionId === 'admin-personais') carregarAdminPersonais();
-      if (sectionId === 'admin-academias') carregarAdminAcademias();
       if (sectionId === 'admin-comissoes') carregarAdminComissoes();
       if (sectionId === 'admin-config') carregarAdminConfig();
     }
@@ -10638,17 +10524,16 @@
       Object.keys(localStorage).filter(function(k) { return k.indexOf('ironqi_plano_') === 0; }).forEach(function(k) { planos[k.replace('ironqi_plano_', '')] = localStorage.getItem(k); });
       var keys = Object.keys(usuarios);
       var totalUsers = keys.length;
-      var totalAutonomos = 0, totalPersonais = 0, totalAcademias = 0;
-      keys.forEach(function(e) { var d = usuarios[e].dados || {}; var t = d.perfil || d.tipo || ''; if (t === 'autonomo' || t === 'aluno_autonomo' || t === '') totalAutonomos++; else if (t === 'personal' || t === 'aluno_personal') totalPersonais++; else if (t === 'academia') totalAcademias++; });
+      var totalAutonomos = 0, totalPersonais = 0;
+      keys.forEach(function(e) { var d = usuarios[e].dados || {}; var t = d.perfil || d.tipo || ''; if (t === 'autonomo' || t === 'aluno_autonomo' || t === '') totalAutonomos++; else if (t === 'personal' || t === 'aluno_personal') totalPersonais++; });
       var totalPlanos = Object.keys(planos).length;
-      var receitaMap = { 'aluno_start': 19.90, 'aluno_pro': 29.90, 'personal_pro': 39.90, 'personal_elite': 79.90, 'academia_start': 199, 'academia_pro': 299, 'academia_elite': 499 };
+      var receitaMap = { 'aluno_start': 19.90, 'aluno_pro': 29.90, 'personal_pro': 39.90, 'personal_elite': 79.90 };
       var receitaMensal = 0, expiradas = 0;
       Object.keys(planos).forEach(function(k) { var p = planos[k]; if (receitaMap[p]) receitaMensal += receitaMap[p]; else if (p === 'personal_free') { /* free */ } else expiradas++; });
       document.getElementById('admin-dash-cards').innerHTML =
         '<div class="iron-card" style="cursor:default;"><div class="label">Total de Usuários</div><div class="value">' + totalUsers + '</div><div class="sub">Todas as contas</div></div>' +
         '<div class="iron-card" style="cursor:default;"><div class="label">Alunos Autônomos</div><div class="value">' + totalAutonomos + '</div><div class="sub">Contas de aluno</div></div>' +
         '<div class="iron-card" style="cursor:default;"><div class="label">Personais</div><div class="value">' + totalPersonais + '</div><div class="sub">Personal trainers</div></div>' +
-        '<div class="iron-card" style="cursor:default;"><div class="label">Academias</div><div class="value">' + totalAcademias + '</div><div class="sub">Contas institucionais</div></div>' +
         '<div class="iron-card" style="cursor:default;"><div class="label">Assinaturas Ativas</div><div class="value">' + totalPlanos + '</div><div class="sub">Planos vigentes</div></div>' +
         '<div class="iron-card" style="cursor:default;"><div class="label">Assinaturas Expiradas</div><div class="value">' + expiradas + '</div><div class="sub">Sem renovação</div></div>' +
         '<div class="iron-card" style="cursor:default;"><div class="label">Receita Mensal</div><div class="value">R$ ' + receitaMensal.toFixed(2) + '</div><div class="sub">Estimativa atual</div></div>' +
@@ -10720,7 +10605,7 @@
         });
 
         var ctx3 = document.getElementById('chart-distribuicao-planos').getContext('2d');
-        var nomes = { 'aluno_start': 'Aluno START', 'aluno_pro': 'Aluno PRO', 'personal_free': 'Personal FREE', 'personal_pro': 'Personal PRO', 'personal_elite': 'Personal ELITE', 'academia_start': 'Academia START', 'academia_pro': 'Academia PRO', 'academia_elite': 'Academia ELITE' };
+        var nomes = { 'aluno_start': 'Aluno START', 'aluno_pro': 'Aluno PRO', 'personal_free': 'Personal FREE', 'personal_pro': 'Personal PRO', 'personal_elite': 'Personal ELITE' };
         var contPlano = {}; planosKeys.forEach(function(k) { var p = planos[k]; contPlano[p] = (contPlano[p] || 0) + 1; });
         var labelsP = []; var dataP = []; var cores = ['#CCFF00','#4ECDC4','#FF6B6B','#45B7D1','#FFD93D','#DDA0DD','#6BCB77','#FF8C42'];
         Object.keys(contPlano).forEach(function(p, i) { labelsP.push(nomes[p] || p); dataP.push(contPlano[p]); });
@@ -10748,7 +10633,7 @@
       var userStatus = JSON.parse(localStorage.getItem('ironqi_user_status') || '{}');
       var planos = {};
       Object.keys(localStorage).filter(function(k) { return k.indexOf('ironqi_plano_') === 0; }).forEach(function(k) { planos[k.replace('ironqi_plano_', '')] = localStorage.getItem(k); });
-      var nomesPlanos = { 'aluno_start': 'Aluno START', 'aluno_pro': 'Aluno PRO', 'personal_free': 'Personal FREE', 'personal_pro': 'Personal PRO', 'personal_elite': 'Personal ELITE', 'academia_start': 'Academia START', 'academia_pro': 'Academia PRO', 'academia_elite': 'Academia ELITE' };
+      var nomesPlanos = { 'aluno_start': 'Aluno START', 'aluno_pro': 'Aluno PRO', 'personal_free': 'Personal FREE', 'personal_pro': 'Personal PRO', 'personal_elite': 'Personal ELITE' };
       var busca = (document.getElementById('admin-users-search').value || '').toLowerCase().trim();
       var filtro = adminFiltroAtual || 'todos';
       var keys = Object.keys(usuarios);
@@ -10756,7 +10641,7 @@
       keys.forEach(function(email) {
         var u = usuarios[email]; var d = u.dados || {};
         var nome = ((d.nome || '') + ' ' + (d.sobrenome || '')).trim() || '—';
-        var tipo = d.tipo || ({'aluno_autonomo':'autonomo','aluno_personal':'alunoPersonal','personal':'personal','academia':'academia'})[d.perfil] || 'autonomo';
+        var tipo = d.tipo || ({'aluno_autonomo':'autonomo','aluno_personal':'alunoPersonal','personal':'personal'})[d.perfil] || 'autonomo';
         var plano = planos[email] ? (nomesPlanos[planos[email]] || planos[email]) : '—';
         var status = userStatus[email] || d.status || 'ativo';
         var criado = u.criadoEm ? new Date(u.criadoEm).toLocaleDateString('pt-BR') : '—';
@@ -10766,7 +10651,6 @@
 
         if (filtro === 'alunos' && tipo !== 'autonomo' && tipo !== 'alunoPersonal') return;
         if (filtro === 'personais' && tipo !== 'personal') return;
-        if (filtro === 'academias' && tipo !== 'academia') return;
         if (filtro === 'ativos' && status !== 'ativo') return;
         if (filtro === 'bloqueados' && status !== 'bloqueado') return;
         if (busca && nome.toLowerCase().indexOf(busca) === -1 && email.toLowerCase().indexOf(busca) === -1) return;
@@ -10925,10 +10809,7 @@
       aluno_start:     { nome:'Aluno START',     valor:19.90,  recursos:['App exclusivo','Ficha de treino básica','Suporte por e-mail'],                          limiteAlunos:0,  cor:'#CCFF00',  ativo:true  },
       aluno_pro:       { nome:'Aluno PRO',       valor:29.90,  recursos:['App exclusivo','Ficha personalizada','Suporte prioritário','Acesso a dietas'],            limiteAlunos:0,  cor:'#4ECDC4', ativo:true  },
       personal_pro:    { nome:'Personal PRO',    valor:39.90,  recursos:['Gestão de alunos','Até 20 alunos','Agenda de treinos','Relatórios'],                       limiteAlunos:20, cor:'#45B7D1', ativo:true  },
-      personal_elite:  { nome:'Personal ELITE',  valor:79.90,  recursos:['Gestão de alunos','Alunos ilimitados','Agenda avançada','Relatórios','Prioridade suporte'],  limiteAlunos:0,  cor:'#DDA0DD', ativo:true  },
-      academia_start:  { nome:'Academia START',  valor:199,    recursos:['Até 50 alunos','Painel administrativo','Suporte básico'],                                   limiteAlunos:50, cor:'#FF6B6B', ativo:true  },
-      academia_pro:    { nome:'Academia PRO',    valor:299,    recursos:['Até 200 alunos','Painel avançado','Relatórios','Suporte prioritário'],                       limiteAlunos:200,cor:'#FFD93D', ativo:true  },
-      academia_elite:  { nome:'Academia ELITE',  valor:499,    recursos:['Alunos ilimitados','Painel completo','Relatórios avançados','Suporte dedicado','API acesso'],  limiteAlunos:0,  cor:'#FF8C42', ativo:true  }
+      personal_elite:  { nome:'Personal ELITE',  valor:79.90,  recursos:['Gestão de alunos','Alunos ilimitados','Agenda avançada','Relatórios','Prioridade suporte'],  limiteAlunos:0,  cor:'#DDA0DD', ativo:true  }
     };
 
     function obterPlanosConfig() {
@@ -10942,7 +10823,7 @@
 
     function carregarAdminPlanos() {
       var planos = obterPlanosConfig();
-      var ids = ['aluno_start','aluno_pro','personal_pro','personal_elite','academia_start','academia_pro','academia_elite'];
+      var ids = ['aluno_start','aluno_pro','personal_pro','personal_elite'];
       var html = '';
       ids.forEach(function(id) {
         var p = planos[id];
@@ -10954,7 +10835,7 @@
         html += '</div>';
         html += '<div class="plan-edit-body">';
         html += '<div class="plan-edit-field"><label>Valor (R$)</label><input type="number" step="0.01" min="0" value="' + p.valor + '" data-field="valor" data-plan="' + id + '"></div>';
-        if (id.indexOf('academia') === 0 || id.indexOf('personal') === 0) {
+        if (id.indexOf('personal') === 0) {
           html += '<div class="plan-edit-field"><label>Limite de Alunos</label><input type="number" min="0" value="' + p.limiteAlunos + '" data-field="limiteAlunos" data-plan="' + id + '" placeholder="0 = ilimitado"></div>';
         } else {
           html += '<div class="plan-edit-field"><label>Limite de Alunos</label><input type="number" min="0" value="' + p.limiteAlunos + '" data-field="limiteAlunos" data-plan="' + id + '" disabled style="opacity:0.4;"></div>';
@@ -11324,7 +11205,6 @@
       carregarAdminPersonais();
     }
 
-    /* ─── ACADEMIAS ─── */
     function carregarAdminComissoes() {
       var comissoes = JSON.parse(localStorage.getItem('ironqi_comissoes') || '[]');
       // Agrupa por personalEmail
@@ -11466,84 +11346,6 @@
       carregarAdminComissoes();
     }
 
-    function carregarAdminAcademias() {
-      var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
-      var planos = {};
-      Object.keys(localStorage).filter(function(k) { return k.indexOf('ironqi_plano_') === 0; }).forEach(function(k) { planos[k.replace('ironqi_plano_', '')] = localStorage.getItem(k); });
-      var nomesPlanos = { 'academia_start': 'START', 'academia_pro': 'PRO', 'academia_elite': 'ELITE' };
-      var userStatus = JSON.parse(localStorage.getItem('ironqi_user_status') || '{}');
-      var academiaLimites = JSON.parse(localStorage.getItem('ironqi_academia_limites') || '{}');
-      var html = '';
-      Object.keys(usuarios).forEach(function(email) {
-        var d = usuarios[email].dados || {};
-        if (d.tipo === 'academia' || d.perfil === 'academia') {
-          var plano = planos[email];
-          var planoNome = nomesPlanos[plano] || (plano ? plano.split('_').pop().toUpperCase() : '—');
-          var status = userStatus[email] || 'ativo';
-          var statusBadge = status === 'bloqueado' ? '<span class="badge red">Bloqueado</span>' : '<span class="badge green">Ativo</span>';
-          var limite = academiaLimites[email] || 0;
-          var emailEsc = email.replace(/'/g, "\\'");
-          html += '<tr>' +
-            '<td>' + (d.nomeAcademia || '—') + '</td>' +
-            '<td>' + (d.emailAdmin || email) + '</td>' +
-            '<td>' + (d.cnpj || '—') + '</td>' +
-            '<td>—</td>' +
-            '<td>' + planoNome + '</td>' +
-            '<td>' + (limite > 0 ? limite : '∞') + '</td>' +
-            '<td>' + statusBadge + '</td>' +
-            '<td style="text-align:center;white-space:nowrap;">' +
-              '<button class="admin-action-btn edit" title="Editar" onclick="adminAcademiaEditar(\'' + emailEsc + '\')">✏️</button>' +
-              (status === 'bloqueado'
-                ? '<button class="admin-action-btn unlock" title="Liberar" onclick="adminAcademiaLiberar(\'' + emailEsc + '\')">🔓</button>'
-                : '<button class="admin-action-btn block" title="Bloquear" onclick="adminAcademiaBloquear(\'' + emailEsc + '\')">🔒</button>') +
-              '<button class="admin-action-btn edit" title="Upgrade" onclick="adminAcademiaUpgrade(\'' + emailEsc + '\')">⬆</button>' +
-            '</td>' +
-          '</tr>';
-        }
-      });
-      document.getElementById('admin-academias-count').textContent = '';
-      document.getElementById('admin-academias-tbody').innerHTML = html || '<tr><td colspan="8" style="text-align:center;color:#555;padding:24px;">Nenhuma academia cadastrada.</td></tr>';
-    }
-
-    function adminAcademiaEditar(email) {
-      var academiaLimites = JSON.parse(localStorage.getItem('ironqi_academia_limites') || '{}');
-      var atual = academiaLimites[email] || 0;
-      var novo = prompt('Alterar limite de alunos para ' + email + ':\n(0 = ilimitado)', atual);
-      if (novo === null) return;
-      var num = parseInt(novo, 10);
-      if (isNaN(num) || num < 0) { alert('Valor inválido.'); return; }
-      academiaLimites[email] = num;
-      localStorage.setItem('ironqi_academia_limites', JSON.stringify(academiaLimites));
-      carregarAdminAcademias();
-    }
-
-    function adminAcademiaBloquear(email) {
-      if (!confirm('Bloquear academia ' + email + '?')) return;
-      var userStatus = JSON.parse(localStorage.getItem('ironqi_user_status') || '{}');
-      userStatus[email] = 'bloqueado';
-      localStorage.setItem('ironqi_user_status', JSON.stringify(userStatus));
-      carregarAdminAcademias();
-    }
-
-    function adminAcademiaLiberar(email) {
-      var userStatus = JSON.parse(localStorage.getItem('ironqi_user_status') || '{}');
-      userStatus[email] = 'ativo';
-      localStorage.setItem('ironqi_user_status', JSON.stringify(userStatus));
-      carregarAdminAcademias();
-    }
-
-    function adminAcademiaUpgrade(email) {
-      var planos = {};
-      Object.keys(localStorage).filter(function(k) { return k.indexOf('ironqi_plano_') === 0; }).forEach(function(k) { planos[k.replace('ironqi_plano_', '')] = localStorage.getItem(k); });
-      var atual = planos[email] || 'academia_start';
-      var opcoes = { 'academia_start': 'START (R$199)', 'academia_pro': 'PRO (R$299)', 'academia_elite': 'ELITE (R$499)' };
-      var nova = prompt('Alterar plano de ' + email + ':\nAtual: ' + (opcoes[atual] || atual) + '\n\nDigite: academia_start, academia_pro ou academia_elite', atual);
-      if (!nova) return;
-      if (!opcoes[nova]) { alert('Plano inválido. Use: academia_start, academia_pro ou academia_elite'); return; }
-      localStorage.setItem('ironqi_plano_' + email, nova);
-      carregarAdminAcademias();
-    }
-
     /* ─── RELATÓRIOS ─── */
     var adminRelChart = {};
 
@@ -11552,7 +11354,7 @@
       var userStatus = JSON.parse(localStorage.getItem('ironqi_user_status') || '{}');
       var planos = {};
       Object.keys(localStorage).filter(function(k) { return k.indexOf('ironqi_plano_') === 0; }).forEach(function(k) { planos[k.replace('ironqi_plano_', '')] = localStorage.getItem(k); });
-      var receitaMap = { 'aluno_start': 19.90, 'aluno_pro': 29.90, 'personal_pro': 39.90, 'personal_elite': 79.90, 'academia_start': 199, 'academia_pro': 299, 'academia_elite': 499 };
+      var receitaMap = { 'aluno_start': 19.90, 'aluno_pro': 29.90, 'personal_pro': 39.90, 'personal_elite': 79.90 };
       var receita = 0;
       var contPlano = {};
       Object.keys(planos).forEach(function(k) {
@@ -11573,7 +11375,7 @@
       ensureChartJs(function() {
         // gráfico distribuição planos
         if (adminRelChart.planos) adminRelChart.planos.destroy();
-        var nomes = { 'aluno_start':'Aluno START','aluno_pro':'Aluno PRO','personal_pro':'Personal PRO','personal_elite':'Personal ELITE','academia_start':'Academia START','academia_pro':'Academia PRO','academia_elite':'Academia ELITE' };
+        var nomes = { 'aluno_start':'Aluno START','aluno_pro':'Aluno PRO','personal_pro':'Personal PRO','personal_elite':'Personal ELITE' };
         var ctxP = document.getElementById('chart-rel-planos').getContext('2d');
         var labelsP = []; var dataP = []; var cores = ['#CCFF00','#4ECDC4','#45B7D1','#DDA0DD','#FF6B6B','#FFD93D','#FF8C42'];
         Object.keys(contPlano).forEach(function(p, i) { labelsP.push(nomes[p] || p); dataP.push(contPlano[p]); });
@@ -11586,15 +11388,14 @@
         // gráfico receita por tipo
         if (adminRelChart.receita) adminRelChart.receita.destroy();
         var ctxR = document.getElementById('chart-rel-receita').getContext('2d');
-        var recPorTipo = { aluno: 0, personal: 0, academia: 0 };
+        var recPorTipo = { aluno: 0, personal: 0 };
         Object.keys(planos).forEach(function(k) {
           var p = planos[k];
           if (p.indexOf('aluno') === 0) recPorTipo.aluno += receitaMap[p] || 0;
           else if (p.indexOf('personal') === 0) recPorTipo.personal += receitaMap[p] || 0;
-          else if (p.indexOf('academia') === 0) recPorTipo.academia += receitaMap[p] || 0;
         });
         adminRelChart.receita = new Chart(ctxR, {
-          type: 'bar', data: { labels: ['Alunos', 'Personais', 'Academias'], datasets: [{ label: 'Receita (R$)', data: [recPorTipo.aluno, recPorTipo.personal, recPorTipo.academia], backgroundColor: ['#CCFF00','#4ECDC4','#FF6B6B'], borderRadius: 4 }] },
+          type: 'bar', data: { labels: ['Alunos', 'Personais'], datasets: [{ label: 'Receita (R$)', data: [recPorTipo.aluno, recPorTipo.personal], backgroundColor: ['#CCFF00','#4ECDC4'], borderRadius: 4 }] },
           options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: '#888' }, grid: { color: 'rgba(255,255,255,0.03)' } }, y: { ticks: { color: '#888', callback: function(v) { return 'R$' + v; } }, grid: { color: 'rgba(255,255,255,0.03)' } } } }
         });
       });
@@ -11609,7 +11410,7 @@
       Object.keys(usuarios).forEach(function(email) {
         var u = usuarios[email]; var d = u.dados || {};
         var nome = ((d.nome || '') + ' ' + (d.sobrenome || '')).trim();
-        var tipo = d.tipo || ({'aluno_autonomo':'autonomo','aluno_personal':'alunoPersonal','personal':'personal','academia':'academia'})[d.perfil] || 'autonomo';
+        var tipo = d.tipo || ({'aluno_autonomo':'autonomo','aluno_personal':'alunoPersonal','personal':'personal'})[d.perfil] || 'autonomo';
         var plano = planos[email] || '—';
         var status = userStatus[email] || 'ativo';
         var data = u.criadoEm ? new Date(u.criadoEm).toLocaleDateString('pt-BR') : '—';
@@ -11631,7 +11432,7 @@
       Object.keys(usuarios).forEach(function(email) {
         var u = usuarios[email]; var d = u.dados || {};
         var nome = ((d.nome || '') + ' ' + (d.sobrenome || '')).trim();
-        var tipo = d.tipo || ({'aluno_autonomo':'autonomo','aluno_personal':'alunoPersonal','personal':'personal','academia':'academia'})[d.perfil] || 'autonomo';
+        var tipo = d.tipo || ({'aluno_autonomo':'autonomo','aluno_personal':'alunoPersonal','personal':'personal'})[d.perfil] || 'autonomo';
         var plano = planos[email] || '—';
         var status = userStatus[email] || 'ativo';
         var data = u.criadoEm ? new Date(u.criadoEm).toLocaleDateString('pt-BR') : '—';
@@ -11718,14 +11519,11 @@
       var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
       var u = usuarios[email];
       var dados = u ? (u.dados || {}) : {};
-      var tipo = dados.tipo || ({'aluno_autonomo':'autonomo','aluno_personal':'alunoPersonal','personal':'personal','academia':'academia'})[dados.perfil] || 'autonomo';
+      var tipo = dados.tipo || ({'aluno_autonomo':'autonomo','aluno_personal':'alunoPersonal','personal':'personal'})[dados.perfil] || 'autonomo';
       var nome = ((dados.nome || '') + ' ' + (dados.sobrenome || '')).trim() || email.split('@')[0];
       var perfilReal = dados.perfil || dados.tipo || '';
       if (perfilReal === 'aluno_personal' && dados.personal_vinculado) {
         return { role: 'aluno_personal', email: email, nome: nome, personalVinculado: dados.personal_vinculado };
-      }
-      if (tipo === 'academia') {
-        return { role: 'academia', email: email, nome: nome, nomeAcademia: dados.nomeAcademia || 'Academia' };
       }
       if (tipo === 'autonomo') {
         return { role: 'autonomo', email: email, nome: nome };
@@ -11736,7 +11534,7 @@
     function chatCarregar() {
       var info = chatGetUserInfo();
       if (!info) return;
-      if (info.role === 'personal' || info.role === 'academia') {
+      if (info.role === 'personal') {
         chatPersonalIniciarFirestore(info);
         chatRenderTwoCol(info);
       } else {
@@ -11744,7 +11542,7 @@
       }
     }
 
-    // ─── TWO-COLUMN VIEW (personal / academia) ───
+    // ─── TWO-COLUMN VIEW (personal) ───
     var chatContatoAtivo = null;
     var _chatPersonalListener = null;
 
@@ -11786,7 +11584,7 @@
       var msgs = chatGetMsgs();
       var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
 
-      // montar contatos — para personal: alunos vinculados; para academia: todos que mandaram mensagem
+      // montar contatos — alunos vinculados ao personal
       var contatos = {};
       if (isPersonal) {
         // alunos vinculados a este personal
@@ -11818,23 +11616,6 @@
           } else {
             // atualizar naoLidas
             if (m.receiver === myEmail && !m.read && m.sender !== CONTATO_ADMIN) {
-              contatos[outro].naoLidas = (contatos[outro].naoLidas || 0) + 1;
-            }
-          }
-        });
-      } else {
-        // academia: todos que mandaram mensagem
-        msgs.forEach(function(m) {
-          var outro = m.sender === myEmail ? m.receiver : m.sender;
-          if (!contatos[outro]) {
-            var d = usuarios[outro] ? (usuarios[outro].dados || {}) : {};
-            var conv = msgs.filter(function(x) { return (x.sender === outro && x.receiver === myEmail) || (x.sender === myEmail && x.receiver === outro); });
-            var ultima = conv.length ? conv[conv.length - 1] : null;
-            var naoLidas = conv.filter(function(x) { return x.receiver === myEmail && !x.read; }).length;
-            var nome = ((d.nome || '') + ' ' + (d.sobrenome || '')).trim() || outro.split('@')[0];
-            contatos[outro] = { email: outro, nome: nome, ultima: ultima, naoLidas: naoLidas };
-          } else {
-            if (m.receiver === myEmail && !m.read) {
               contatos[outro].naoLidas = (contatos[outro].naoLidas || 0) + 1;
             }
           }

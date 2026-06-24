@@ -179,7 +179,10 @@
       if (firebaseConfig.apiKey === 'SUA_API_KEY') throw new Error('demo');
       firebase.initializeApp(firebaseConfig);
       auth = firebase.auth();
-    } catch (e) { isDemo = true; }
+    } catch (e) {
+      var _local = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+      if (_local) isDemo = true;
+    }
 
     const form = document.getElementById('login-form');
     const email = document.getElementById('email');
@@ -190,13 +193,12 @@
     function tentarLogin(eVal, pVal) {
       if (isDemo) {
         var usuarios = JSON.parse(localStorage.getItem('ironqi_usuarios') || '{}');
-        if (!usuarios[eVal]) { errorMsg.textContent = 'Usuário não encontrado.'; errorMsg.classList.add('show'); return false; }
-        if (usuarios[eVal].senha !== pVal) { errorMsg.textContent = 'Senha incorreta.'; errorMsg.classList.add('show'); return false; }
+        if (!usuarios[eVal] || usuarios[eVal].senha !== pVal) { errorMsg.textContent = 'E-mail ou senha inválidos.'; errorMsg.classList.add('show'); return false; }
         localStorage.setItem('ironqi_logado', eVal);
         return true;
       } else {
         return auth.signInWithEmailAndPassword(eVal, pVal).then(function() { return true; }).catch(function(err) {
-          var erros = { 'auth/user-not-found': 'Usuário não encontrado.', 'auth/wrong-password': 'Senha incorreta.', 'auth/invalid-credential': 'E-mail ou senha inválidos.', 'auth/invalid-email': 'E-mail inválido.', 'auth/too-many-requests': 'Muitas tentativas. Tente novamente mais tarde.' };
+          var erros = { 'auth/user-not-found': 'E-mail ou senha inválidos.', 'auth/wrong-password': 'E-mail ou senha inválidos.', 'auth/invalid-credential': 'E-mail ou senha inválidos.', 'auth/invalid-email': 'E-mail inválido.', 'auth/too-many-requests': 'Muitas tentativas. Tente novamente mais tarde.' };
           errorMsg.textContent = erros[err.code] || 'Erro ao conectar.';
           errorMsg.classList.add('show');
           return false;
@@ -209,7 +211,7 @@
       errorMsg.classList.remove('show');
 
       const eVal = email.value.trim();
-      const pVal = password.value.trim();
+      const pVal = password.value;
 
       if (!eVal || !pVal) { errorMsg.textContent = 'Preencha todos os campos.'; errorMsg.classList.add('show'); return; }
       if (pVal.length < 6) { errorMsg.textContent = 'A senha deve ter no mínimo 6 caracteres.'; errorMsg.classList.add('show'); return; }
@@ -226,7 +228,7 @@
         auth.signInWithEmailAndPassword(eVal, pVal)
           .then(function() { window.location.href = 'app.html'; })
           .catch(function(err) {
-            var erros = { 'auth/user-not-found': 'Usuário não encontrado.', 'auth/wrong-password': 'Senha incorreta.', 'auth/invalid-credential': 'E-mail ou senha inválidos.', 'auth/invalid-email': 'E-mail inválido.', 'auth/too-many-requests': 'Muitas tentativas. Tente novamente mais tarde.' };
+            var erros = { 'auth/user-not-found': 'E-mail ou senha inválidos.', 'auth/wrong-password': 'E-mail ou senha inválidos.', 'auth/invalid-credential': 'E-mail ou senha inválidos.', 'auth/invalid-email': 'E-mail inválido.', 'auth/too-many-requests': 'Muitas tentativas. Tente novamente mais tarde.' };
             errorMsg.textContent = erros[err.code] || 'Erro ao conectar.'; errorMsg.classList.add('show');
           })
           .finally(function() { btn.textContent = 'ENTRAR'; btn.disabled = false; });
@@ -239,9 +241,9 @@
       if (isDemo) { alert('Modo demo: redefinição de senha não disponível. Configure o Firebase.'); }
       else {
         auth.sendPasswordResetEmail(email.trim())
-          .then(function() { alert('E-mail de redefinição enviado!'); })
+          .then(function() { alert('Se este e-mail estiver cadastrado, você receberá as instruções de redefinição.'); })
           .catch(function(err) {
-            var erros = { 'auth/user-not-found': 'Usuário não encontrado.', 'auth/invalid-email': 'E-mail inválido.' };
+            var erros = { 'auth/user-not-found': 'Se este e-mail estiver cadastrado, você receberá as instruções de redefinição.', 'auth/invalid-email': 'E-mail inválido.' };
             alert(erros[err.code] || 'Erro ao conectar.');
           });
       }
