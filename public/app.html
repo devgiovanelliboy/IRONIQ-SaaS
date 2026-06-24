@@ -8164,8 +8164,6 @@
         sidImgP.src = url;
         sidImgP.style.display = 'block';
       }
-      // Persistir em localStorage
-      if (_st.usuarios[]) { if (!_st.usuarios[].dados) _st.usuarios[].dados = {}; _st.usuarios[].dados.fotoUrl = ; }
       var usuarios = _st.usuarios;
       if (!usuarios[email]) usuarios[email] = { senha: '', dados: {} };
       usuarios[email].dados.fotoUrl = url;
@@ -9720,7 +9718,7 @@
       var plano = getPlanoUsuario();
       var diasCiclo = (_CICLO_DIAS[tipo] || {})[plano];
       if (!diasCiclo) return { bloqueado: false };
-      var ultimoAceite = _st.ultimoAceite[tipo + '_' + ];
+      var ultimoAceite = _st.ultimoAceite[tipo + '_' + email];
       if (!ultimoAceite) return { bloqueado: false };
       var dataAceite = new Date(ultimoAceite);
       var diffDias = Math.floor((Date.now() - dataAceite) / 86400000);
@@ -9761,7 +9759,7 @@
       ['treino', 'dieta'].forEach(function(tipo) {
         var diasCiclo = (_CICLO_DIAS[tipo] || {})[plano];
         if (!diasCiclo) return;
-        var ultimoAceite = _st.ultimoAceite[tipo + '_' + ];
+        var ultimoAceite = _st.ultimoAceite[tipo + '_' + email];
         if (!ultimoAceite) return;
         var diffDias = Math.floor((Date.now() - new Date(ultimoAceite)) / 86400000);
         var diasRestantes = diasCiclo - diffDias;
@@ -9793,7 +9791,7 @@
     function verificarAjusteDisponivel(tipo) {
       var email = localStorage.getItem('ironqi_logado');
       if (!email) return { disponivel: false };
-      var ultimo = _st.ultimoAjuste[tipo + '_' + ];
+      var ultimo = _st.ultimoAjuste[tipo + '_' + email];
       if (!ultimo) return { disponivel: true };
       var diffDias = Math.floor((Date.now() - new Date(ultimo)) / 86400000);
       if (diffDias < 30) return { disponivel: false, diasRestantes: 30 - diffDias };
