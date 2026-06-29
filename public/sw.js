@@ -1,4 +1,4 @@
-var CACHE = 'ironiq-v25';
+var CACHE = 'ironiq-v28';
 var APP_SHELL = [
   '/',
   '/index.html',
@@ -8,7 +8,39 @@ var APP_SHELL = [
   '/logo.webp',
   '/logo-192.png',
   '/logo-512.png',
-  '/logo-apple.png'
+  '/logo-apple.png',
+  '/css/base.css',
+  '/css/components.css',
+  '/css/pages.css',
+  '/css/responsive.css',
+  '/js/utils.js',
+  '/js/state.js',
+  '/js/firebase-init.js',
+  '/js/services/uid-map.js',
+  '/js/services/firestore.js',
+  '/js/modules/admin-core.js',
+  '/js/modules/admin-usuarios.js',
+  '/js/modules/admin-comissoes.js',
+  '/js/modules/admin-config.js',
+  '/js/modules/chat.js',
+  '/js/modules/comissoes.js',
+  '/js/modules/dashboard.js',
+  '/js/modules/protocolo-form.js',
+  '/js/modules/protocolo-aceite.js',
+  '/js/modules/protocolo-render.js',
+  '/js/modules/personal-alunos.js',
+  '/js/modules/personal-review.js',
+  '/js/modules/personal-dieta.js',
+  '/js/modules/personal-modal.js',
+  '/js/modules/personal-kanban.js',
+  '/js/modules/perfil.js',
+  '/js/modules/treino-ativo.js',
+  '/js/modules/evolucao.js',
+  '/js/modules/planos.js',
+  '/js/modules/dieta.js',
+  '/js/modules/agenda.js',
+  '/js/router.js',
+  '/js/modules/auth.js'
 ];
 
 self.addEventListener('install', function(event) {

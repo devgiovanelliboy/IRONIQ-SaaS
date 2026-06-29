@@ -1,0 +1,657 @@
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 991px) {
+      .sidebar-nav { display: none !important; }
+      .sidebar-nav.show {
+        display: flex !important;
+        position: fixed; top: 0; left: 0;
+        height: 100vh; z-index: 1000;
+        background: rgba(18,22,22,0.98);
+        backdrop-filter: blur(20px) saturate(1.2);
+        -webkit-backdrop-filter: blur(20px) saturate(1.2);
+        border-right: 1px solid rgba(255,255,255,0.05);
+        transform: translateX(-100%);
+        width: 260px;
+        transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      }
+      .sidebar-nav.show.open { transform: translateX(0); }
+      /* No mobile o bottom-nav é a navegação principal, MAS só pode aparecer o
+         nav do papel correto (com .show). Sem o .show isto mostrava TANTO o nav
+         de aluno QUANTO o de personal no celular — por isso o aluno via a barra
+         de personal só no mobile (no PC os bottom-navs ficam ocultos). */
+      nav.bottom-nav.show { display: flex !important; }
+      .dashboard-layout .page,
+      .page { margin-left: 0 !important; }
+      .sidebar-backdrop {
+        position: fixed; inset: 0; z-index: 999;
+        background: rgba(0,0,0,0.5);
+        display: none;
+      }
+      .sidebar-backdrop.open { display: block !important; }
+      .sidebar-toggle {
+        display: flex !important;
+        position: fixed; top: calc(env(safe-area-inset-top, 0px) + 10px); left: 12px; z-index: 1001;
+        align-items: center; justify-content: center;
+        background: rgba(20,24,24,0.9); border: 1px solid #2A3232; border-radius: 10px;
+        color: #E8E8E8; width: 42px; height: 42px;
+        font-size: 22px; cursor: pointer; padding: 0;
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      }
+      .sidebar-toggle:hover { color: #CCFF00; }
+      .sidebar-collapse-btn { display: none !important; }
+      .sidebar-close {
+        display: flex !important;
+        background: none; border: none; color: #888;
+        cursor: pointer; padding: 8px;
+        font-size: 20px;
+      }
+      .sidebar-close:hover { color: #CCFF00; }
+      .page-grid-container {
+        grid-template-columns: 1fr;
+        padding: 16px;
+        gap: 16px;
+      }
+      .page-grid-container .grid-span-2 {
+        grid-column: 1 / -1;
+      }
+      .iron-card {
+        padding: 24px 20px;
+      }
+      .banner-trial-premium {
+        padding: 14px 18px;
+      }
+      #page-admin { margin-left: 0 !important; width: 100% !important; }
+      #page-admin .admin-content { padding: calc(env(safe-area-inset-top, 0px) + 60px) 15px calc(env(safe-area-inset-bottom, 0px) + 24px); }
+      #page-admin .admin-header { padding-left: 4px; }
+      .perfil-duas-colunas {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+      }
+
+      /* ─── MOBILE: pages with .main-content ─── */
+      #page-dashboard.page,
+      #page-dieta.page {
+        padding: 0 !important;
+      }
+      .main-content {
+        margin-left: 0 !important;
+        width: 100% !important;
+        padding: calc(env(safe-area-inset-top, 0px) + 56px) 15px 120px 15px !important;
+      }
+    }
+
+    /* ─── PROTOCOL / DIETA CARDS ─── */
+    .protocolo-card,
+    .dieta-texto-container {
+      width: 100% !important;
+      max-width: 900px !important;
+      background-color: #141717 !important;
+      border: 1px solid #222 !important;
+      border-radius: 12px !important;
+      padding: 30px !important;
+      margin: 0 auto 20px auto !important;
+    }
+    .refeicao-card {
+      background: #141717;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 15px;
+    }
+    .refeicao-card h3 {
+      margin: 0 0 12px;
+      font-size: 16px;
+      color: #deff9a;
+    }
+    .refeicao-card ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .refeicao-card ul li {
+      color: #ccc;
+      font-size: 13px;
+      margin-bottom: 6px;
+      line-height: 1.5;
+    }
+    .refeicao-card ul li strong {
+      color: #aaa;
+      font-weight: 600;
+    }
+    .refeicao-card ul ul {
+      list-style: disc;
+      padding-left: 20px;
+      margin-top: 4px;
+    }
+    .refeicao-card ul ul li {
+      margin-bottom: 3px;
+    }
+    .dieta-aviso {
+      background: rgba(255, 183, 0, 0.08);
+      border: 1px solid rgba(255, 183, 0, 0.25);
+      border-radius: 10px;
+      padding: 16px 20px;
+      margin-bottom: 20px;
+    }
+    .dieta-aviso p {
+      color: #FFB300;
+      font-size: 13px;
+      font-weight: 600;
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    @media (min-width: 992px) {
+      nav.bottom-nav { display: none !important; }
+      .sidebar-backdrop,
+      .sidebar-toggle,
+      .sidebar-close { display: none !important; }
+
+      /* Default .page offset for pages without .main-content */
+      #app.dashboard-layout .page {
+        margin-left: 280px;
+        width: calc(100% - 280px);
+        max-width: calc(100% - 280px);
+        transition: margin-left 0.3s ease, width 0.3s ease;
+      }
+      #app.sidebar-collapsed .page {
+        margin-left: 90px !important;
+        width: calc(100% - 90px) !important;
+        max-width: calc(100% - 90px) !important;
+      }
+
+      /* Pages using .main-content handle offset via .main-content */
+      #page-dashboard.page,
+      #page-dieta.page {
+        margin-left: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+      }
+      #app.sidebar-collapsed #page-dashboard.page,
+      #app.sidebar-collapsed #page-dieta.page {
+        margin-left: 0 !important;
+        width: 100% !important;
+      }
+
+      /* ─── MAIN CONTENT WRAPPER ─── */
+      .main-content {
+        margin-left: 280px;
+        width: calc(100% - 280px);
+        transition: all 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        padding: 40px;
+        box-sizing: border-box;
+        flex: 1;
+      }
+      #app.sidebar-collapsed .main-content {
+        margin-left: 90px;
+        width: calc(100% - 90px);
+      }
+    }
+
+    #page-treino-ativo {
+      padding-bottom: 120px !important;
+    }
+    #card-treino {
+      padding-bottom: 120px !important;
+    }
+    #page-treino-ativo .treino-container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 0 4px 120px;
+    }
+
+    /* ─── TREINO HEADER ─── */
+    .treino-header {
+      text-align: center;
+      padding: 24px 16px 8px;
+    }
+    .treino-header .treino-titulo {
+      font-size: 22px;
+      font-weight: 800;
+      color: #E8E8E8;
+      margin: 0;
+      letter-spacing: -0.3px;
+    }
+    .treino-header .treino-subtitulo {
+      font-size: 13px;
+      color: #888;
+      margin: 4px 0 0;
+    }
+
+    /* ─── TREINO TABS ─── */
+    .treino-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 0 4px 4px;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .treino-tabs::-webkit-scrollbar { display: none; }
+    .treino-tab {
+      flex-shrink: 0;
+      padding: 10px 20px;
+      border-radius: 10px;
+      background: #1F2525;
+      border: none;
+      color: #888;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+      white-space: nowrap;
+    }
+    .treino-tab.active {
+      background: #CCFF00;
+      color: #0E1111;
+    }
+    .treino-tab:active { transform: scale(0.95); }
+
+    /* ─── TREINO CARD (shared) ─── */
+    .treino-card {
+      background: #111414;
+      border: 1px solid #1F2525;
+      border-radius: 16px;
+      padding: 20px 18px;
+    }
+
+    /* ─── TREINO TABLE ─── */
+    .treino-table-wrap {
+      background: #111414;
+      border: 1px solid #1F2525;
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    .treino-empty {
+      padding: 32px 16px;
+      text-align: center;
+      color: #555;
+      font-size: 14px;
+    }
+    .treino-table {
+      width: 100%;
+    }
+    .treino-row {
+      display: grid;
+      grid-template-columns: 40px 1fr auto auto 90px;
+      gap: 8px;
+      align-items: center;
+      padding: 14px 16px;
+      border-bottom: 1px solid #1A1F1F;
+    }
+    .treino-row:last-child { border-bottom: none; }
+    .treino-row .ex-thumb {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: #1A1F1F;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+    .treino-row .ex-info {
+      min-width: 0;
+    }
+    .treino-row .ex-info .ex-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #E8E8E8;
+      line-height: 1.3;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .treino-row .ex-info .ex-detail {
+      font-size: 11px;
+      color: #777;
+      margin-top: 1px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .treino-row .ex-set {
+      font-size: 13px;
+      font-weight: 800;
+      color: #888;
+      text-align: center;
+      min-width: 32px;
+    }
+    .treino-row .ex-reps {
+      font-size: 13px;
+      font-weight: 800;
+      color: #0E1111;
+      background: #CCFF00;
+      padding: 4px 10px;
+      border-radius: 8px;
+      text-align: center;
+      white-space: nowrap;
+      min-width: 48px;
+    }
+    .treino-row .ex-carga {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      justify-content: flex-end;
+    }
+    .treino-row .ex-carga .input-carga {
+      width: 68px;
+      padding: 8px 6px;
+      font-size: 14px;
+    }
+    .treino-row .ex-carga .carga-label {
+      font-size: 11px;
+      color: #555;
+      font-weight: 600;
+    }
+    .treino-row .ex-carga .carga-static {
+      font-size: 14px;
+      color: #555;
+      font-weight: 400;
+    }
+
+    /* ─── CONDENSED MODE (small screens) ─── */
+    @media (max-width: 420px) {
+      .treino-row {
+        grid-template-columns: 34px 1fr auto 72px;
+        gap: 6px;
+        padding: 12px 12px;
+      }
+      .treino-row .ex-set { display: none; }
+      .treino-row .ex-thumb {
+        width: 30px;
+        height: 30px;
+        font-size: 15px;
+      }
+      .treino-row .ex-info .ex-name { font-size: 13px; }
+      .treino-row .ex-info .ex-detail { font-size: 10px; }
+      .treino-row .ex-reps { font-size: 12px; padding: 3px 8px; min-width: 40px; }
+      .treino-row .ex-carga .input-carga { width: 58px; padding: 6px 4px; font-size: 13px; }
+    }
+
+    /* ─── INPUT CARGA (kept) ─── */
+    .input-carga {
+      width: 80px;
+      padding: 10px 8px;
+      border-radius: 10px;
+      background: #1F2525;
+      border: 1.5px solid #2A3232;
+      color: #CCFF00;
+      font-size: 16px;
+      font-weight: 700;
+      text-align: center;
+      outline: none;
+      font-family: inherit;
+      -moz-appearance: textfield;
+      transition: border-color 0.2s;
+    }
+    .input-carga::-webkit-inner-spin-button,
+    .input-carga::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+    .input-carga:focus { border-color: #CCFF00; }
+    .input-carga::placeholder { color: #555; font-weight: 400; font-size: 14px; }
+
+    /* ─── OBSERVAÇÕES ─── */
+    .treino-obs-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 10px;
+    }
+    #treino-ativo-obs {
+      width: 100%;
+      background: #1A1F1F;
+      border: 1px solid #2A2F2F;
+      border-radius: 10px;
+      padding: 12px;
+      color: #E8E8E8;
+      font-size: 13px;
+      resize: vertical;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.2s;
+      line-height: 1.6;
+    }
+    #treino-ativo-obs:focus { border-color: #CCFF00; }
+    #treino-ativo-obs::placeholder { color: #555; }
+
+    /* ─── CONCLUIR BOTÃO ─── */
+    .treino-concluir-btn {
+      margin-top: 16px;
+      width: 100%;
+      padding: 16px;
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    @media (max-width: 480px) {
+      .page-grid-container {
+        padding: 12px;
+        gap: 12px;
+      }
+      .iron-card {
+        padding: 20px 16px;
+      }
+    }
+
+    /* ─── DIETA / IMC PLAN START BLOCKER ─── */
+    #page-dieta, #page-imc { position: relative; overflow-y: auto; }
+    .dieta-blocker {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 50;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      border-radius: inherit;
+    }
+    .dieta-blocker-card {
+      background: #161A1A;
+      border: 1px solid #2A3232;
+      border-radius: 24px;
+      padding: 32px 28px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 0 60px rgba(0,0,0,0.5);
+    }
+    .dieta-blocker-card .lock-icon {
+      font-size: 48px;
+      margin-bottom: 12px;
+    }
+    .dieta-blocker-card .lock-icon i {
+      color: #555;
+    }
+    .dieta-blocker-card h2 {
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+    .dieta-blocker-card h2 .text-green {
+      color: #CCFF00;
+    }
+    .dieta-blocker-card p {
+      font-size: 13px;
+      color: #888;
+      margin: 8px 0 16px;
+      line-height: 1.7;
+    }
+    .dieta-blocker-card p strong {
+      color: #CCFF00;
+    }
+    .dieta-blocker-card .btn {
+      width: 100%;
+      margin-top: 8px;
+    }
+    .dieta-blocker-card .btn-secondary {
+      background: transparent;
+      border: 1px solid #2A3232;
+      color: #888;
+    }
+    .dieta-blocker-card .btn-secondary:hover {
+      border-color: #444;
+      color: #aaa;
+    }
+
+    /* ─── PERSONAL HOME CRM ─── */
+    .personal-home-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 8px;
+    }
+    .aluno-card {
+      background: #141717;
+      border: 1px solid #1F2525;
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: border 0.2s, transform 0.2s;
+    }
+    .aluno-card:hover {
+      border-color: #2A3232;
+      transform: translateY(-2px);
+    }
+    .aluno-card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .aluno-avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      background: #1F2525;
+      border: 1.5px solid #CCFF00;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; font-weight: 800; color: #CCFF00;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .aluno-avatar img {
+      width: 100%; height: 100%; object-fit: cover;
+    }
+    .aluno-card-nome {
+      font-size: 15px; font-weight: 700;
+      line-height: 1.3;
+    }
+    .aluno-card-email {
+      font-size: 11px; color: #666;
+      word-break: break-all;
+    }
+    .aluno-card-info {
+      display: flex; flex-wrap: wrap; gap: 6px 14px;
+      font-size: 12px; color: #999;
+      padding: 8px 0;
+    }
+    .aluno-card-info span {
+      white-space: nowrap;
+    }
+    .aluno-card-info .info-label {
+      color: #555;
+    }
+    .aluno-card-info .info-value {
+      color: #CCFF00; font-weight: 600;
+    }
+    .aluno-card-actions {
+      display: flex; gap: 6px; flex-wrap: wrap;
+      margin-top: auto;
+      padding-top: 12px;
+      border-top: 1px solid #1F2525;
+    }
+    .aluno-card-actions button {
+      flex: 1; min-width: 80px;
+      background: transparent;
+      border: 1px solid #2A3232;
+      color: #deff9a;
+      padding: 8px 10px;
+      border-radius: 10px;
+      font-size: 11px; font-weight: 600;
+      cursor: pointer; font-family: inherit;
+      transition: all 0.2s;
+    }
+    .aluno-card-actions button:hover {
+      background: rgba(222, 255, 154, 0.1);
+      border-color: #deff9a;
+    }
+    .personal-stats-bar {
+      display: flex; gap: 12px; overflow-x: auto;
+      padding-bottom: 4px; scrollbar-width: none;
+    }
+    .personal-stats-bar::-webkit-scrollbar { display: none; }
+    .stat-card {
+      flex-shrink: 0;
+      background: #141717;
+      border: 1px solid #1F2525;
+      border-radius: 12px;
+      padding: 14px 18px;
+      min-width: 120px;
+      text-align: center;
+    }
+    .stat-card .stat-num {
+      font-size: 22px; font-weight: 800; color: #CCFF00;
+      line-height: 1.2;
+    }
+    .stat-card .stat-label {
+      font-size: 10px; color: #666; text-transform: uppercase;
+      letter-spacing: 0.5px; margin-top: 2px;
+    }
+    .personal-home-search {
+      width: 100%;
+      background: #141717;
+      border: 1px solid #1F2525;
+      border-radius: 12px;
+      padding: 12px 16px;
+      color: #E8E8E8;
+      font-size: 13px; font-family: inherit;
+      outline: none; transition: border 0.2s;
+      margin-top: 4px;
+    }
+    .personal-home-search:focus {
+      border-color: #CCFF00;
+    }
+    .personal-home-search::placeholder {
+      color: #555;
+    }
+    .personal-home-empty {
+      grid-column: 1 / -1;
+      text-align: center; padding: 60px 20px;
+      color: #555;
+    }
+    .personal-home-empty .icon-big {
+      font-size: 48px; margin-bottom: 12px;
+    }
+    .personal-home-empty h3 {
+      font-size: 16px; color: #888; margin-bottom: 6px;
+    }
+    .personal-home-empty p {
+      font-size: 13px; color: #555;
+    }
+    #personal-home-aluno-indicator {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(204,255,0,0.1);
+      border: 1px solid rgba(204,255,0,0.2);
+      border-radius: 10px;
+      padding: 6px 14px;
+      font-size: 12px; color: #CCFF00;
+      cursor: pointer; font-weight: 600;
+      transition: 0.2s; font-family: inherit;
+    }
+    #personal-home-aluno-indicator:hover {
+      background: rgba(204,255,0,0.18);
+    }
