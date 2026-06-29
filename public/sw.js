@@ -1,4 +1,4 @@
-var CACHE = 'ironiq-v28';
+var CACHE = 'ironiq-v29';
 var APP_SHELL = [
   '/',
   '/index.html',
@@ -39,6 +39,7 @@ var APP_SHELL = [
   '/js/modules/planos.js',
   '/js/modules/dieta.js',
   '/js/modules/agenda.js',
+  '/js/templates.js',
   '/js/router.js',
   '/js/modules/auth.js'
 ];
