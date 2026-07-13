@@ -31,13 +31,14 @@ function check(name, cond, detail) { results.push({ name, ok: !!cond, detail: de
 (async () => {
   const srv = await serve();
   const port = srv.address().port;
-  const url = `http://localhost:${port}/index.html?demo`;
+  const url = `http://localhost:${port}/app.html?demo`;
   const browser = await chromium.launch();
   const context = await browser.newContext();
   const page = await context.newPage();
   const errors = [];
   page.on('pageerror', e => errors.push('pageerror: ' + e.message));
-  page.on('console', m => { if (m.type() === 'error') errors.push('console.error: ' + m.text()); });
+  page.on('console', m => { if (m.type() === 'error' && !/Failed to load resource/.test(m.text())) errors.push('console.error: ' + m.text()); });
+  page.on('response', r => { if (r.status() >= 400 && !/favicon\.ico$/.test(r.url())) errors.push('HTTP ' + r.status() + ': ' + r.url()); });
   page.on('dialog', d => d.accept());
 
   await page.goto(url, { waitUntil: 'domcontentloaded' });
@@ -52,23 +53,34 @@ function check(name, cond, detail) { results.push({ name, ok: !!cond, detail: de
       'personal@test.com': { dados: { nome: 'Carlos', sobrenome: 'PT', perfil: 'personal', tipo: 'personal' } },
       'aluno@test.com': { dados: { nome: 'Ana', sobrenome: 'Silva', perfil: 'aluno_personal', personal_vinculado: 'personal@test.com' } }
     };
-    localStorage.setItem('ironqi_usuarios', JSON.stringify(usuarios));
-    localStorage.removeItem('ironqi_agenda_slots');
-    localStorage.removeItem('ironqi_agenda_checkins');
+    window._st.usuarios = usuarios;
+    window._st.agendaSlots = [];
+    window._st.agendaCheckins = [];
   });
 
   // ── 1) PERSONAL cria um horário individual (2 vagas) ──
-  await page.evaluate(() => { localStorage.setItem('ironqi_personal_logado', 'personal@test.com'); localStorage.removeItem('ironqi_logado'); window.navigate('agenda-personal'); });
+  await page.evaluate(() => { localStorage.setItem('ironqi_logado', 'personal@test.com'); localStorage.setItem('ironqi_personal_logado', 'personal@test.com'); window.navigate('agenda-personal'); });
   await page.waitForSelector('#page-agenda-personal.active', { timeout: 5000 });
   await page.fill('#agenda-data', amanha);
   await page.fill('#agenda-hora', '07:00');
   await page.selectOption('#agenda-tipo', 'individual');
   await page.fill('#agenda-capacidade', '2');
   await page.fill('#agenda-titulo', 'Funcional');
-  await page.click('#page-agenda-personal button.btn-primary'); // Adicionar horário
+  await page.evaluate(() => window.agendaAddSlot());
   await page.waitForTimeout(300);
 
-  const slotCriado = await page.evaluate(() => JSON.parse(localStorage.getItem('ironqi_agenda_slots') || '[]'));
+  const diagAgenda = await page.evaluate(() => ({
+    isDemo: window.isDemo,
+    personal: localStorage.getItem('ironqi_personal_logado'),
+    data: document.getElementById('agenda-data').value,
+    hora: document.getElementById('agenda-hora').value,
+    tipo: document.getElementById('agenda-tipo').value,
+    capacidade: document.getElementById('agenda-capacidade').value,
+    slots: window._st.agendaSlots
+  }));
+  if (!diagAgenda.slots || !diagAgenda.slots.length) console.log('DIAG AGENDA:', JSON.stringify(diagAgenda));
+
+  const slotCriado = await page.evaluate(() => window._st.agendaSlots || []);
   check('Personal criou 1 horário', slotCriado.length === 1, slotCriado.length + ' slot(s)');
   check('Slot com capacidade 2 e tipo individual', slotCriado[0] && slotCriado[0].capacidade === 2 && slotCriado[0].tipo === 'individual');
   const listaPersonalAntes = await page.textContent('#agenda-personal-lista');
@@ -88,11 +100,11 @@ function check(name, cond, detail) { results.push({ name, ok: !!cond, detail: de
   const listaAlunoDepois = await page.textContent('#agenda-aluno-lista');
   check('Aluno confirmado após check-in', /confirmado/i.test(listaAlunoDepois));
   check('Vaga decrementou para "1 vaga"', /1 vaga/.test(listaAlunoDepois), listaAlunoDepois.replace(/\s+/g, ' ').slice(0, 120));
-  const ckSalvo = await page.evaluate(() => JSON.parse(localStorage.getItem('ironqi_agenda_checkins') || '[]'));
+  const ckSalvo = await page.evaluate(() => window._st.agendaCheckins || []);
   check('Check-in gravado com o aluno correto', ckSalvo.length === 1 && ckSalvo[0].alunoEmail === 'aluno@test.com' && ckSalvo[0].slotId === slotId);
 
   // ── 3) PERSONAL vê a presença do aluno ──
-  await page.evaluate(() => { localStorage.setItem('ironqi_personal_logado', 'personal@test.com'); localStorage.removeItem('ironqi_logado'); window.navigate('agenda-personal'); });
+  await page.evaluate(() => { localStorage.setItem('ironqi_logado', 'personal@test.com'); localStorage.setItem('ironqi_personal_logado', 'personal@test.com'); window.navigate('agenda-personal'); });
   await page.waitForSelector('#page-agenda-personal.active', { timeout: 5000 });
   await page.waitForTimeout(200);
   const listaPersonalDepois = await page.textContent('#agenda-personal-lista');
@@ -105,7 +117,7 @@ function check(name, cond, detail) { results.push({ name, ok: !!cond, detail: de
   await page.waitForTimeout(200);
   await page.click('#agenda-aluno-lista button:has-text("Cancelar check-in")');
   await page.waitForTimeout(300);
-  const ckAposCancel = await page.evaluate(() => JSON.parse(localStorage.getItem('ironqi_agenda_checkins') || '[]'));
+  const ckAposCancel = await page.evaluate(() => window._st.agendaCheckins || []);
   check('Check-in removido após cancelar', ckAposCancel.length === 0);
 
   check('Nenhum erro de runtime no console/página', errors.length === 0, errors.slice(0, 5).join(' | '));

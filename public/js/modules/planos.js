@@ -81,24 +81,12 @@
       var email = localStorage.getItem('ironqi_logado') || localStorage.getItem('ironqi_personal_logado');
       if (!email && auth && auth.currentUser) email = auth.currentUser.email;
       if (!email) { alert('Faça login primeiro.'); return; }
-      var nome = planoNomes[tipo] || tipo;
-      _st.planos[email] = tipo;
-      // Define vencimento da assinatura (30 dias) — planos grátis não vencem
-      var _vence = (tipo === 'personal_free') ? '' : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-      if (_vence) _st.planoVencimento[email] = _vence;
-      else delete _st.planoVencimento[email];
-      // Persiste no Firestore para sync cross-device
-      if (!isDemo && db) {
-        var _pUid = (auth && auth.currentUser) ? auth.currentUser.uid : emailToUid[email];
-        if (_pUid) db.collection('usuarios').doc(_pUid).update({ plano: tipo, planoVencimento: _vence || null }).catch(function(e) { console.warn('Firestore plano update error:', e); });
+      if (tipo === 'personal_free') {
+        alert('O plano gratuito é liberado no cadastro. Se ele não aparece na sua conta, fale com o suporte.');
+        return;
       }
-      alert('✅ Assinatura ' + nome + ' ativada com sucesso!');
-      var usuarios = _st.usuarios;
-      var user = usuarios[email];
-      var dados = user && user.dados ? user.dados : {};
-      var perfil = dados.perfil || dados.tipo || (tipo.indexOf('personal_') === 0 ? 'personal' : '');
-      if (perfil === 'personal') { navigate('personal-home'); }
-      else { navigate('dashboard'); }
+      var nome = planoNomes[tipo] || tipo;
+      alert('O checkout seguro para ' + nome + ' está em configuração. Nenhum plano foi ativado e nenhuma cobrança foi feita.\n\nContato: contato.ironiq@gmail.com');
     }
 
     // Exibe page-planos filtrando apenas a categoria do perfil do usuário
@@ -117,19 +105,17 @@
     function ativarTrial() {
       var email = localStorage.getItem('ironqi_logado');
       if (!email) return;
-      var expira = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-      _st.planos[email] = 'trial';
-      _st.trialExpira[email] = expira;
-      if (!isDemo && db && auth && auth.currentUser) {
-        db.collection('usuarios').doc(auth.currentUser.uid).update({
-          plano: 'trial',
-          trialExpira: expira
-        }).catch(function(e) { console.warn('Firestore trial error:', e); });
+      if (isDemo) {
+        var demoExpira = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+        _st.planos[email] = 'trial'; _st.trialExpira[email] = demoExpira;
+        navigate('dashboard'); atualizarSidebar(); return;
       }
-      var usuarios = _st.usuarios;
-      var perfil = (usuarios[email] && usuarios[email].dados && usuarios[email].dados.perfil) || 'aluno_autonomo';
-      navigate('dashboard');
-      atualizarSidebar();
+      if (!functionsApi) { alert('Teste gratuito temporariamente indisponível.'); return; }
+      functionsApi.httpsCallable('activateTrial')({}).then(function(res) {
+        var expira = res.data.expira;
+        _st.planos[email] = 'trial'; _st.trialExpira[email] = expira;
+        navigate('dashboard'); atualizarSidebar();
+      }).catch(function(err) { alert(err.message || 'Não foi possível ativar o teste gratuito.'); });
     }
 
     function trialExpirado(email) {
@@ -412,10 +398,6 @@
     }
 
     function assinarPRO() {
-      var email = localStorage.getItem('ironqi_logado');
-      if (email) {
-        _st.planos[email] = 'aluno_pro';
-      }
       document.getElementById('modal-upgrade').classList.remove('show');
       document.getElementById('modal-form').classList.remove('show');
       _upgradeBlocked = true;

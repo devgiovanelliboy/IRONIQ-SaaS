@@ -48,8 +48,8 @@
       }
 
       var userMsg =
-        'Você é um Médico Nutricionista Sênior especializado em alimentação esportiva. ' +
-        'Monte uma dieta simples, barata e acessível com alimentos do dia a dia (nada de salmão, alimentos importados ou caros). ' +
+        'Você é um assistente de educação alimentar voltado ao esporte. ' +
+        'Crie uma sugestão alimentar educativa, simples e acessível, que obrigatoriamente deverá ser revisada por nutricionista habilitado antes de ser usada. ' +
         'Use alimentos como: frango, ovos, arroz, feijão, batata-doce, banana, aveia, pão integral, leite (se permitido), etc. ' +
         'A dieta deve ser dividida em 4 refeições: Café da Manhã, Almoço, Lanche, Jantar.\n\n' +
         'Dados da solicitação do aluno:\n' +
@@ -97,7 +97,7 @@
       _iaFetch({
         model: 'llama-3.1-8b-instant',
         messages: [
-          { role: 'system', content: 'Você é um Médico Nutricionista Sênior focado em alimentação esportiva. Retorne APENAS o formato solicitado, sem markdown, sem explicações. Prefira alimentos simples, baratos e acessíveis no Brasil. Respeite rigorosamente todas as restrições alimentares informadas.' },
+          { role: 'system', content: 'Você é um assistente de educação alimentar, não substitui nutricionista ou médico. Retorne APENAS o formato solicitado, sem markdown. Prefira alimentos simples e acessíveis no Brasil, respeite as restrições informadas e inclua no início: ADVERTÊNCIA: sugestão educativa sujeita à revisão de nutricionista habilitado.' },
           { role: 'user', content: userMsg }
         ],
         temperature: 0.5,
@@ -141,7 +141,7 @@
       .catch(function(err) {
         clearTimeout(timeoutId);
         console.log('Erro IA dieta personal:', err);
-        alert('Erro ao gerar dieta com IA. Tente novamente.');
+        alert('A geração por IA está indisponível e nenhum conteúdo de exemplo será aprovado como real. Tente novamente mais tarde ou encaminhe a solicitação a um nutricionista habilitado.');
       });
     }
 

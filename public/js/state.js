@@ -13,7 +13,7 @@ var _st = {
   planos: {},
   planoVencimento: {},
   trialExpira: {},
-  trialConfig: { ativo: true, duracao: 48, mensagem: 'Teste grátis de 48h — aproveite todos os recursos!' },
+  trialConfig: { ativo: true, duracao: 24, mensagem: 'Teste grátis de 24h — aproveite todos os recursos!' },
   ultimoAceite: {},
   ultimoAjuste: {},
   agua: {},

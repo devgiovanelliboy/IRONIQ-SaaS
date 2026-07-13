@@ -3,7 +3,7 @@
 // Depende de: firebase-config.js (firebaseConfig global) + SDK compat CDN.
 
 var isDemo = false;
-var auth = null, db = null, storage = null;
+var auth = null, db = null, storage = null, functionsApi = null;
 var _protocoloListener = null;
 
 // ─── PROXY DE IA (Groq) ──────────────────────────────────────────────────────
@@ -39,6 +39,7 @@ if (!isDemo) {
     auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(function(e) { console.error('Erro de persistência:', e); });
     db = firebase.firestore();
     storage = firebase.storage();
+    functionsApi = firebase.functions('us-central1');
   } catch (e) {
     isDemo = true;
     console.log('Modo demo — Firebase não configurado');

@@ -19,29 +19,21 @@ https://console.firebase.google.com/project/ironiq-e9f7e/usage/details
 | `reconcileCheckinCount` | trigger | Recalcula `checkinCount` pela contagem real da subcoleção (defesa contra divergência). |
 | `setUserRole` | callable (admin) | Atribui `perfil`/`tipoPersonal` a outro usuário (doc + custom claim) e troca o Personal Principal. Faz o painel admin **persistir** mudança de tipo. |
 | `enforceLimiteAlunos` | trigger | Reverte o vínculo de um aluno que exceda o limite do personal (limite em `configuracoes/limites_alunos`). |
+| `activateTrial` | callable | Ativa uma única avaliação gratuita de 24h no servidor. |
+| `acceptProtocol` | callable | Finaliza aceite, ciclo, protocolo atual e comissão em operação autoritativa. |
+| `adminDeleteUser` | callable (admin) | Exclui Firebase Auth, perfil, subcoleções e referências relacionadas. |
+| `syncUidMap` | trigger | Mantém o mapa e-mail → UID sem permitir escrita do cliente. |
 
 ## Passos para ativar (quando o Blaze estiver ligado)
 
 1. Ative o Blaze no link acima.
-2. Reative a seção no `firebase.json`:
-   ```json
-   "functions": { "source": "functions" },
-   ```
-3. `firebase deploy --only functions`
-4. **Aí me chame** para a 2ª fase (que eu segurei de propósito para não quebrar produção):
-   - Trocar `agendaCheckin`/`agendaCancelarCheckin` no `index.html` para chamar os callables
-     (`firebase.functions().httpsCallable(...)`) em vez de gravar direto no Firestore.
-   - Endurecer as regras: remover a escrita de `checkins` e de `agenda_slots.checkinCount`
-     pelo cliente (passam a ser feitas só pelas functions / Admin SDK). Leitura continua igual.
-   - Ligar `adminPersonalAlterarTipo` ao `setUserRole`.
-   - Migrar `ironqi_personal_limites` (hoje só localStorage) para `configuracoes/limites_alunos`
-     no Firestore, para o `enforceLimiteAlunos` enxergar os limites.
-   - Re-rodar o E2E ao vivo (`backend/qa-agenda-live.test.js`).
+2. Defina orçamento e alertas no Google Cloud.
+3. Publique funções, regras e hosting juntos: `firebase deploy --only functions,firestore:rules,hosting`.
+4. Re-rodar os E2E ao vivo de dieta, identidade e agenda.
 
 ## Enquanto o Blaze não é ativado
 
 - **Papéis** já podem ser atribuídos hoje, sem Functions, pelo script local
   [../backend/admin-roles.js](../backend/admin-roles.js) (usa Admin SDK + `serviceAccount.json`).
-- O check-in continua funcionando pelo caminho client-side atual (testado, 10/10). O único
-  caveat é o `checkinCount` ser gravável pelo cliente — mitigado, não crítico (a verdade da
-  presença é a subcoleção, que só o personal lê).
+- Não publique isoladamente o novo hosting/regras: aceite, trial, exclusão e check-in já
+  dependem das Functions. O deploy deve ser conjunto após ativar o Blaze.

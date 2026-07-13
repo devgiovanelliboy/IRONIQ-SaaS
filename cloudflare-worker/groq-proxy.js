@@ -14,6 +14,20 @@ const ALLOWED_MODELS = ['llama-3.1-8b-instant'];
 
 // Cache simples das chaves públicas do Firebase (por isolate)
 let _jwkCache = { keys: null, exp: 0 };
+const _rate = new Map();
+const RATE_WINDOW_MS = 60 * 1000;
+const RATE_MAX = 10;
+
+function rateAllowed(uid) {
+  const now = Date.now();
+  const entry = _rate.get(uid);
+  if (!entry || now - entry.start >= RATE_WINDOW_MS) {
+    _rate.set(uid, { start: now, count: 1 });
+    return true;
+  }
+  entry.count += 1;
+  return entry.count <= RATE_MAX;
+}
 
 function corsHeaders() {
   return {
@@ -99,11 +113,16 @@ export default {
     const auth = request.headers.get('Authorization') || '';
     const m = auth.match(/^Bearer (.+)$/);
     if (!m) return json(401, { error: 'Token ausente' });
+    let identity;
     try {
-      await verifyFirebaseToken(m[1], projectId);
+      identity = await verifyFirebaseToken(m[1], projectId);
     } catch (e) {
       return json(401, { error: 'Token inválido', detail: String(e.message || e) });
     }
+
+    if (!rateAllowed(identity.sub)) return json(429, { error: 'Limite temporário atingido. Aguarde um minuto e tente novamente.' });
+    const contentLength = Number(request.headers.get('content-length') || 0);
+    if (contentLength > 60000) return json(413, { error: 'Solicitação muito grande' });
 
     if (!env.GROQ_API_KEY) return json(500, { error: 'GROQ_API_KEY não configurada no Worker' });
 

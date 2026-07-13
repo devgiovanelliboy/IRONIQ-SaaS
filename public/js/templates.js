@@ -59,7 +59,7 @@
               <span class="auth-link-sep">·</span>
               <a href="#" onclick="exibirCadastro(); return false;" class="auth-link">Criar conta</a>
             </div>
-            <p class="auth-sub">Ao continuar, você aceita nossos Termos de Uso e Política de Privacidade.</p>
+            <p class="auth-sub">Ao continuar, você aceita nossos <a href="termos.html" target="_blank" rel="noopener">Termos de Uso</a> e <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a>.</p>
           </div>
         </div>
       </div>
@@ -142,7 +142,7 @@
             <div style="text-align:center; margin-top:8px;">
               <a href="#" onclick="exibirLogin(); return false;" class="auth-link">Já tem conta? Entrar</a>
             </div>
-            <p class="auth-sub">Ao continuar, você aceita nossos Termos de Uso e Política de Privacidade.</p>
+            <p class="auth-sub">Ao continuar, você aceita nossos <a href="termos.html" target="_blank" rel="noopener">Termos de Uso</a> e <a href="privacidade.html" target="_blank" rel="noopener">Política de Privacidade</a>.</p>
           </div>
         </div>
       </div>
@@ -180,7 +180,7 @@
         <div class="banner-trial-premium" id="banner-trial">
           <div>
             <div class="text"><i data-lucide="rocket"></i> TESTE GRÁTIS</div>
-            <div style="font-size:12px; color:#888; margin-top:2px;">Aproveite 48h liberadas!</div>
+            <div style="font-size:12px; color:#888; margin-top:2px;">Aproveite 24h liberadas!</div>
           </div>
           <div class="countdown" id="countdown">48:00:00</div>
         </div>
@@ -1122,9 +1122,9 @@
               <div class="banner-trial-premium" id="admin-banner-trial">
                 <div>
                   <div class="text"><i data-lucide="clock"></i> TESTE GRÁTIS ATIVO</div>
-                  <div style="font-size:12px; color:#888; margin-top:2px;">Usuários aproveitam 48h liberadas</div>
+                  <div style="font-size:12px; color:#888; margin-top:2px;">Usuários aproveitam 24h liberadas</div>
                 </div>
-                <div class="countdown" id="admin-trial-status" style="font-size:16px;">48h</div>
+                <div class="countdown" id="admin-trial-status" style="font-size:16px;">24h</div>
               </div>
               <div class="admin-dash-metrics" id="admin-dash-cards"></div>
               <div class="iron-card" style="justify-content:center; padding:20px;"><canvas id="chart-crescimento-usuarios" height="180"></canvas></div>

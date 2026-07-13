@@ -44,12 +44,22 @@ service cloud.firestore {
       // Dono cria o próprio doc — NÃO pode nascer com papel privilegiado (anti-escalação).
       // Papéis admin/personal_interno/personal_principal só via Admin SDK (backend/admin-roles.js).
       allow create: if request.auth != null && request.auth.uid == userId
+        && request.resource.data.get('perfil', '') in ['aluno_autonomo', 'aluno_personal', 'personal']
         && request.resource.data.get('perfil', '') != 'admin'
-        && !(request.resource.data.get('tipoPersonal', '') in ['personal_interno', 'personal_principal']);
+        && !(request.resource.data.get('tipoPersonal', '') in ['personal_interno', 'personal_principal'])
+        && !request.resource.data.keys().hasAny([
+          'plano', 'planoVencimento', 'trialExpira', 'trialUtilizado', 'status',
+          'ultimoAceiteTreino', 'ultimoAceiteDieta', 'bloqueadoPorLimite'
+        ]);
 
       // Dono atualiza o próprio doc — pode manter o papel que já tem, mas NÃO pode
       // escalar perfil/tipoPersonal para um valor privilegiado por conta própria.
       allow update: if request.auth != null && request.auth.uid == userId
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny([
+          'perfil', 'tipo', 'tipoPersonal', 'plano', 'planoVencimento',
+          'trialExpira', 'trialUtilizado', 'status', 'personal_vinculado',
+          'ultimoAceiteTreino', 'ultimoAceiteDieta', 'bloqueadoPorLimite'
+        ])
         && (request.resource.data.get('perfil', '') == resource.data.get('perfil', '')
             || request.resource.data.get('perfil', '') != 'admin')
         && (request.resource.data.get('tipoPersonal', '') == resource.data.get('tipoPersonal', '')
@@ -109,10 +119,9 @@ service cloud.firestore {
     match /uidMap/{document} {
       // Leitura aberta a autenticados (lookups cross-user de personais)
       allow read: if request.auth != null;
-      // Só é possível gravar um mapeamento que aponte para o PRÓPRIO uid —
-      // impede envenenar o mapeamento de outra conta.
-      allow write: if request.auth != null
-        && request.resource.data.uid == request.auth.uid;
+      // Gravado exclusivamente pelo trigger syncUidMap (Admin SDK), evitando
+      // envenenamento do ID de documento por um cliente autenticado.
+      allow write: if false;
     }
 
     // ── Fila de aprovação de protocolos ────────────────────────────────────
@@ -133,18 +142,29 @@ service cloud.firestore {
       allow create: if request.auth != null
         && request.resource.data.alunoEmail == request.auth.token.email
         && request.resource.data.keys().hasAll(['alunoEmail', 'reviewerEmail', 'direcionadoPara'])
+        && request.resource.data.reviewerEmail == request.resource.data.direcionadoPara
+        && request.resource.data.direcionadoPara == get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.personal_vinculado
         && request.resource.data.get('descricao', '').size() <= 10000
         && request.resource.data.get('observacoes', '').size() <= 10000;
-      // Reviewer, aluno ou Personal Interno (para protocolos de autônomos) podem atualizar
-      allow update: if request.auth != null && (
+      // Reviewer ou Personal Interno atualizam a revisão sem trocar as identidades do protocolo.
+      allow update: if request.auth != null
+        && request.resource.data.alunoEmail == resource.data.alunoEmail
+        && request.resource.data.reviewerEmail == resource.data.reviewerEmail
+        && request.resource.data.direcionadoPara == resource.data.direcionadoPara
+        && (
         resource.data.reviewerEmail == request.auth.token.email ||
         resource.data.direcionadoPara == request.auth.token.email ||
-        resource.data.alunoEmail == request.auth.token.email ||
         (
           resource.data.direcionadoPara == get(/databases/$(database)/documents/configuracoes/sistema).data.personalPrincipal &&
           ehInterno()
         )
       );
+      // Aluno só pode rejeitar/descartar o próprio protocolo. Aceite final é feito
+      // pela Cloud Function acceptProtocol, que também grava ciclo e comissão.
+      allow update: if request.auth != null
+        && resource.data.alunoEmail == request.auth.token.email
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'dataRejeicao'])
+        && request.resource.data.status in ['rejeitado_aluno', 'rejeitado_aluno_novo_solicitado'];
     }
 
     // ── Configurações globais do app ────────────────────────────────────────
@@ -158,9 +178,8 @@ service cloud.firestore {
 
     // ── Comissões de personais ───────────────────────────────────────────────
     match /comissoes/{docId} {
-      // Aluno cria ao aceitar o PRÓPRIO protocolo (impede forjar comissão alheia)
-      allow create: if request.auth != null
-        && request.resource.data.alunoEmail == request.auth.token.email;
+      // Criação é exclusiva do Admin SDK via acceptProtocol.
+      allow create: if false;
       allow read: if request.auth != null && (
         resource.data.personalEmail == request.auth.token.email ||
         resource.data.alunoEmail == request.auth.token.email ||
@@ -202,12 +221,10 @@ service cloud.firestore {
         && request.resource.data.personalEmail == request.auth.token.email;
       allow delete: if request.auth != null
         && resource.data.personalEmail == request.auth.token.email;
-      // Update: dono edita tudo; aluno vinculado só pode mexer no contador checkinCount
-      allow update: if request.auth != null && (
-        resource.data.personalEmail == request.auth.token.email ||
-        ( ehVinculado()
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['checkinCount']) )
-      );
+      // Dono edita os dados do horário, mas o contador é exclusivo do servidor.
+      allow update: if request.auth != null
+        && resource.data.personalEmail == request.auth.token.email
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['checkinCount']);
 
       // Check-in: 1 doc por aluno (id = uid)
       match /checkins/{ckId} {
@@ -219,10 +236,8 @@ service cloud.firestore {
           slotPersonal() == request.auth.token.email ||
           ckId == request.auth.uid
         );
-        // Aluno vinculado cria/apaga somente o próprio check-in
-        allow create, delete: if request.auth != null
-          && ckId == request.auth.uid
-          && get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.personal_vinculado == slotPersonal();
+        // Escrita exclusiva das Cloud Functions autoritativas.
+        allow create, delete: if false;
       }
     }
   }

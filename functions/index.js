@@ -5,6 +5,9 @@
  * - reconcileCheckinCount: mantém checkinCount fiel à subcoleção (trigger)
  * - setUserRole: atribuição de papéis privilegiados (admin) → doc + custom claim
  * - enforceLimiteAlunos: bloqueia vínculo de aluno acima do limite do personal (trigger)
+ * - activateTrial: libera uma única avaliação gratuita de 24h no servidor
+ * - acceptProtocol: conclui aceite + dieta/treino + comissão de forma atômica
+ * - adminDeleteUser: exclui Auth, perfil, subcoleções e referências de uma conta
  */
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
 const { onDocumentWritten } = require('firebase-functions/v2/firestore');
@@ -12,6 +15,25 @@ const admin = require('firebase-admin');
 
 admin.initializeApp();
 const db = admin.firestore();
+
+async function isAdmin(uid, token) {
+  if (token && token.admin === true) return true;
+  const doc = await db.collection('usuarios').doc(uid).get();
+  return doc.exists && doc.data().perfil === 'admin';
+}
+
+function emailMapId(email) {
+  return String(email || '').replace(/\./g, ',');
+}
+
+async function deleteQuery(query) {
+  const snap = await query.get();
+  if (snap.empty) return 0;
+  const writer = db.bulkWriter();
+  snap.docs.forEach((doc) => writer.delete(doc.ref));
+  await writer.close();
+  return snap.size;
+}
 
 // ─────────────────────────────────────────────────────────────
 //  AGENDA — check-in autoritativo
@@ -85,9 +107,7 @@ const TIPOS_VALIDOS = ['personal', 'personal_interno', 'personal_principal'];
 
 exports.setUserRole = onCall(async (req) => {
   if (!req.auth) throw new HttpsError('unauthenticated', 'Login necessário.');
-  const callerDoc = await db.collection('usuarios').doc(req.auth.uid).get();
-  const isAdmin = req.auth.token.admin === true || (callerDoc.exists && callerDoc.data().perfil === 'admin');
-  if (!isAdmin) throw new HttpsError('permission-denied', 'Apenas admin pode alterar papéis.');
+  if (!(await isAdmin(req.auth.uid, req.auth.token))) throw new HttpsError('permission-denied', 'Apenas admin pode alterar papéis.');
 
   const data = req.data || {};
   const targetEmail = data.targetEmail;
@@ -126,6 +146,109 @@ exports.setUserRole = onCall(async (req) => {
 });
 
 // ─────────────────────────────────────────────────────────────
+//  CONTA — exclusão definitiva (somente admin)
+// ─────────────────────────────────────────────────────────────
+exports.adminDeleteUser = onCall(async (req) => {
+  if (!req.auth) throw new HttpsError('unauthenticated', 'Login necessário.');
+  if (!(await isAdmin(req.auth.uid, req.auth.token))) throw new HttpsError('permission-denied', 'Apenas admin pode excluir contas.');
+  const targetEmail = String((req.data && req.data.targetEmail) || '').trim().toLowerCase();
+  if (!targetEmail) throw new HttpsError('invalid-argument', 'targetEmail obrigatório.');
+  if (targetEmail === String(req.auth.token.email || '').toLowerCase()) throw new HttpsError('failed-precondition', 'Você não pode excluir a própria conta por este painel.');
+
+  let user;
+  try { user = await admin.auth().getUserByEmail(targetEmail); }
+  catch (e) { if (e.code === 'auth/user-not-found') return { ok: true, alreadyDeleted: true }; throw e; }
+
+  const related = [
+    ['protocolos_analise', 'alunoEmail'], ['protocolos_analise', 'reviewerEmail'],
+    ['protocolos_analise', 'direcionadoPara'], ['protocolos_analise', 'aprovadoPor'],
+    ['comissoes', 'alunoEmail'], ['comissoes', 'personalEmail']
+  ];
+  let deletedRelated = 0;
+  for (const [collection, field] of related) {
+    deletedRelated += await deleteQuery(db.collection(collection).where(field, '==', targetEmail));
+  }
+  await db.recursiveDelete(db.collection('usuarios').doc(user.uid));
+  await db.collection('uidMap').doc(emailMapId(targetEmail)).delete().catch(() => {});
+  await admin.auth().deleteUser(user.uid);
+  return { ok: true, uid: user.uid, deletedRelated: deletedRelated };
+});
+
+// ─────────────────────────────────────────────────────────────
+//  TRIAL — uma única ativação de 24h, definida no servidor
+// ─────────────────────────────────────────────────────────────
+exports.activateTrial = onCall(async (req) => {
+  if (!req.auth) throw new HttpsError('unauthenticated', 'Login necessário.');
+  const ref = db.collection('usuarios').doc(req.auth.uid);
+  return db.runTransaction(async (tx) => {
+    const doc = await tx.get(ref);
+    if (!doc.exists) throw new HttpsError('not-found', 'Perfil não encontrado.');
+    const data = doc.data();
+    if (data.trialUtilizado === true || data.plano === 'trial') throw new HttpsError('already-exists', 'O teste gratuito já foi utilizado.');
+    if (data.plano && data.plano !== 'trial') throw new HttpsError('failed-precondition', 'Sua conta já possui um plano.');
+    const expira = admin.firestore.Timestamp.fromMillis(Date.now() + 24 * 60 * 60 * 1000);
+    tx.update(ref, { plano: 'trial', trialExpira: expira, trialUtilizado: true });
+    return { ok: true, expira: expira.toDate().toISOString() };
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+//  ACEITE — finalização e comissão autoritativas
+// ─────────────────────────────────────────────────────────────
+exports.acceptProtocol = onCall(async (req) => {
+  if (!req.auth) throw new HttpsError('unauthenticated', 'Login necessário.');
+  const email = String(req.auth.token.email || '').toLowerCase();
+  const tipo = req.data && req.data.tipo === 'dieta' ? 'dieta' : 'treino';
+  let protocoloId = String((req.data && req.data.protocoloId) || '');
+  let protocoloRef;
+  let protocoloDoc;
+
+  if (protocoloId && !protocoloId.startsWith('fs_')) {
+    protocoloRef = db.collection('protocolos_analise').doc(protocoloId);
+    protocoloDoc = await protocoloRef.get();
+  }
+  if (!protocoloDoc || !protocoloDoc.exists) {
+    const snap = await db.collection('protocolos_analise')
+      .where('alunoEmail', '==', email)
+      .where('status', '==', 'aguardando_aceite_aluno').get();
+    const match = snap.docs.find((doc) => (doc.data().tipo || 'treino') === tipo);
+    if (!match) throw new HttpsError('not-found', 'Protocolo aguardando aceite não encontrado.');
+    protocoloDoc = match; protocoloRef = match.ref; protocoloId = match.id;
+  }
+
+  const protocolo = protocoloDoc.data();
+  if (String(protocolo.alunoEmail || '').toLowerCase() !== email) throw new HttpsError('permission-denied', 'Este protocolo pertence a outro aluno.');
+  if (protocolo.status !== 'aguardando_aceite_aluno') {
+    if (protocolo.status === 'aprovado') return { ok: true, alreadyAccepted: true, protocoloId: protocoloId };
+    throw new HttpsError('failed-precondition', 'O protocolo não está aguardando aceite.');
+  }
+
+  const userRef = db.collection('usuarios').doc(req.auth.uid);
+  const userDoc = await userRef.get();
+  if (!userDoc.exists) throw new HttpsError('not-found', 'Perfil do aluno não encontrado.');
+  const now = admin.firestore.FieldValue.serverTimestamp();
+  const colecao = tipo === 'dieta' ? 'dietas' : 'treinos';
+  const atualRef = userRef.collection(colecao).doc('atual');
+  const personalEmail = protocolo.aprovadoPor || protocolo.direcionadoPara || protocolo.reviewerEmail || '';
+  const batch = db.batch();
+  batch.update(protocoloRef, { status: 'aprovado', dataAceito: now });
+  batch.set(atualRef, { dados: protocolo.protocolo || {}, status: 'aprovado', aprovadoPor: personalEmail, dataAceito: now });
+  const cicloField = tipo === 'dieta' ? 'ultimoAceiteDieta' : 'ultimoAceiteTreino';
+  batch.update(userRef, { [cicloField]: now });
+
+  if (personalEmail && userDoc.data().plano !== 'trial' && !protocolo.ehAjuste) {
+    const ps = await db.collection('usuarios').where('email', '==', personalEmail).limit(1).get();
+    const pd = ps.empty ? {} : ps.docs[0].data();
+    if (pd.tipoPersonal === 'personal_interno' || pd.tipoPersonal === 'personal_principal') {
+      const commRef = db.collection('comissoes').doc(protocoloId + '_' + tipo);
+      batch.set(commRef, { personalEmail: personalEmail, alunoEmail: email, tipo: tipo, valor: tipo === 'treino' ? 4 : 1, status: 'confirmado', protocoloId: protocoloId, dataConfirmado: now }, { merge: false });
+    }
+  }
+  await batch.commit();
+  return { ok: true, protocoloId: protocoloId };
+});
+
+// ─────────────────────────────────────────────────────────────
 //  LIMITE DE ALUNOS — enforcement no vínculo (trigger)
 //  Limite por personal em configuracoes/limites_alunos { <email>: N } (0 = ilimitado).
 //  Se um aluno_personal exceder o limite do personal, o vínculo é revertido e o
@@ -151,4 +274,14 @@ exports.enforceLimiteAlunos = onDocumentWritten('usuarios/{uid}', async (event) 
     await event.data.after.ref.set({ personal_vinculado: admin.firestore.FieldValue.delete(), bloqueadoPorLimite: true }, { merge: true });
     console.log('Limite de alunos excedido para ' + personalEmail + ' — vínculo de ' + (after.email || event.params.uid) + ' revertido.');
   }
+});
+
+// Mantém o lookup email → uid fora do alcance do cliente.
+exports.syncUidMap = onDocumentWritten('usuarios/{uid}', async (event) => {
+  const before = event.data && event.data.before && event.data.before.exists ? event.data.before.data() : null;
+  const after = event.data && event.data.after && event.data.after.exists ? event.data.after.data() : null;
+  const beforeEmail = before && before.email ? String(before.email).toLowerCase() : '';
+  const afterEmail = after && after.email ? String(after.email).toLowerCase() : '';
+  if (beforeEmail && beforeEmail !== afterEmail) await db.collection('uidMap').doc(emailMapId(beforeEmail)).delete().catch(() => {});
+  if (afterEmail) await db.collection('uidMap').doc(emailMapId(afterEmail)).set({ uid: event.params.uid, email: afterEmail });
 });

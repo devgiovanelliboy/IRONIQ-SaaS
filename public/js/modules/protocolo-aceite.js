@@ -157,11 +157,25 @@
     function aceitarProtocolo(tipo) {
       var aceite = _aceitePendente[tipo];
       if (!aceite) return;
+      if (!isDemo && !aceite._serverAccepted) {
+        if (!functionsApi) { alert('Aceite seguro temporariamente indisponível. Tente novamente mais tarde.'); return; }
+        aceite._serverAccepted = true;
+        functionsApi.httpsCallable('acceptProtocol')({ protocoloId: aceite.id, tipo: tipo })
+          .then(function(res) {
+            if (res.data && res.data.protocoloId) aceite.id = res.data.protocoloId;
+            aceitarProtocolo(tipo);
+          })
+          .catch(function(err) {
+            delete aceite._serverAccepted;
+            alert('Não foi possível concluir o aceite: ' + (err.message || err.code || err));
+          });
+        return;
+      }
       var email = localStorage.getItem('ironqi_logado');
       // Marca início do ciclo deste tipo para controle de limites por plano
       var _agora = new Date().toISOString();
       if (email) _st.ultimoAceite[tipo + '_' + email] = _agora;
-      if (!isDemo && db && auth && auth.currentUser) {
+      if (!isDemo && db && auth && auth.currentUser && !aceite._serverAccepted) {
         var _cicloUpdate = {};
         _cicloUpdate['ultimoAceite' + (tipo === 'treino' ? 'Treino' : 'Dieta')] = _agora;
         db.collection('usuarios').doc(auth.currentUser.uid).update(_cicloUpdate)
@@ -182,13 +196,13 @@
       var el = document.getElementById(elId);
       if (el) el.style.display = 'none';
       // Registra comissão (ajustes não geram comissão)
-      if (!aceite.ehAjuste) {
+      if (!aceite.ehAjuste && !aceite._serverAccepted) {
         var valor = tipo === 'treino' ? 4 : 1;
         registrarComissao(aceite.personalEmail, email, tipo, aceite.id, valor);
       }
       // Atualiza Firestore: marca como aprovado final
       // Atualiza protocolos_analise — inclusive para ids fs_ (busca pelo alunoEmail)
-      if (!isDemo && db) {
+      if (!isDemo && db && !aceite._serverAccepted) {
         var _analiseUpdate = { status: 'aprovado', dataAceito: new Date().toISOString() };
         if (aceite.id && aceite.id.indexOf('fs_') !== 0) {
           atualizarProtocoloAnalise(aceite.id, _analiseUpdate);
@@ -208,7 +222,7 @@
       }
       // Salva na subcoleção do aluno com dados completos + status aprovado (set garante que dados nunca se perdem)
       var uid = emailToUid[email];
-      if (!isDemo && db && uid) {
+      if (!isDemo && db && uid && !aceite._serverAccepted) {
         var colecao = tipo === 'dieta' ? 'dietas' : 'treinos';
         db.collection('usuarios').doc(uid).collection(colecao).doc('atual').set({
           dados: aceite.protocolo,

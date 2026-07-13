@@ -49,7 +49,7 @@
 
     /* ─── LANDING PAGE ─── */
     #page-landing {
-      background: url('arts/22.webp') center/cover no-repeat;
+      background: url('../arts/22.webp') center/cover no-repeat;
       position: relative;
     }
     #page-landing::before {
@@ -172,7 +172,7 @@
       padding: 20px !important;
       z-index: 999999 !important;
       box-sizing: border-box !important;
-      background: url('arts/22.webp') center/cover no-repeat;
+      background: url('../arts/22.webp') center/cover no-repeat;
     }
     #page-login.active::before,
     #page-cadastro.active::before {

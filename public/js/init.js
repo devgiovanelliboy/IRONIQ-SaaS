@@ -23,7 +23,9 @@ if (!sessionStorage.getItem('cache_limpo')) {
 }
 
 // ─── SERVICE WORKER ──────────────────────────────────────────────────────────
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && navigator.serviceWorker &&
+    typeof navigator.serviceWorker.addEventListener === 'function' &&
+    typeof navigator.serviceWorker.register === 'function') {
   var swRefreshing = false;
   // Se a página JÁ está sob controle de um Service Worker neste load, então um
   // 'controllerchange' futuro significa que uma versão NOVA assumiu → recarrega 1x.

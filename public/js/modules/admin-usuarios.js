@@ -166,23 +166,19 @@
     }
 
     function adminExcluirUsuario(email) {
-      if (!confirm('Excluir permanentemente o usuário ' + email + '?\n\nO usuário será bloqueado e não poderá fazer login.')) return;
-      // Marca status 'excluido' no localStorage (a tela filtra e não exibe)
-      var userStatus = _st.userStatus;
-      userStatus[email] = 'excluido';
-      _st.userStatus = userStatus;
-      var usuarios = _st.usuarios;
-      if (usuarios[email] && usuarios[email].dados) usuarios[email].dados.status = 'excluido';
-      _st.usuarios = usuarios;
-      carregarAdminUsuarios();
-      // Marca no Firestore — bloqueia login do usuário
-      _adminFsUpdate(email, { status: 'excluido' },
-        function() {
-          if (auth) auth.sendPasswordResetEmail(email).catch(function() {});
-          alert('✅ Usuário ' + email + ' removido.\nUm link foi enviado ao e-mail do usuário para que possa se recadastrar com nova senha.');
-        },
-        function(err) { alert('⚠️ Removido localmente.\nErro ao atualizar servidor: ' + err); }
-      );
+      if (!confirm('Excluir permanentemente o usuário ' + email + '?\n\nA conta de login e os dados relacionados serão apagados. Esta ação não pode ser desfeita.')) return;
+      if (!functionsApi) { alert('Exclusão segura indisponível. Publique as Cloud Functions antes de usar esta ação.'); return; }
+      var fn = functionsApi.httpsCallable('adminDeleteUser');
+      fn({ targetEmail: email }).then(function() {
+        var usuarios = _st.usuarios;
+        var userStatus = _st.userStatus;
+        delete usuarios[email]; delete userStatus[email]; delete _st.planos[email];
+        _st.usuarios = usuarios; _st.userStatus = userStatus;
+        carregarAdminUsuarios();
+        alert('✅ Conta e dados de ' + email + ' excluídos definitivamente.');
+      }).catch(function(err) {
+        alert('Não foi possível excluir a conta: ' + (err.message || err.code || err));
+      });
     }
 
     function fecharModalAdmin(id) {

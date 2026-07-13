@@ -1,14 +1,17 @@
-var CACHE = 'ironiq-v30';
+var CACHE = 'ironiq-v33';
 var APP_SHELL = [
   '/',
   '/index.html',
   '/app.html',
+  '/termos.html',
+  '/privacidade.html',
   '/firebase-config.js',
   '/manifest.json',
   '/logo.webp',
   '/logo-192.png',
   '/logo-512.png',
   '/logo-apple.png',
+  '/arts/22.webp',
   '/css/base.css',
   '/css/components.css',
   '/css/pages.css',

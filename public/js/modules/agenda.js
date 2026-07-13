@@ -179,23 +179,12 @@
       slot.checkinCount = n + 1; agendaSetSlots(slots);
       agendaRenderSlotsAluno(slot.personalEmail);
       if (!isDemo && db && auth && auth.currentUser) {
-        var uid = auth.currentUser.uid;
-        var slotRef = db.collection('agenda_slots').doc(slotId);
-        var ckRef = slotRef.collection('checkins').doc(uid);
-        db.runTransaction(function(tx) {
-          return tx.get(slotRef).then(function(doc) {
-            if (!doc.exists) throw 'inexistente';
-            var d = doc.data();
-            var count = d.checkinCount || 0;
-            if (d.tipo !== 'aulao' && count >= d.capacidade) throw 'lotado';
-            tx.set(ckRef, { alunoEmail: email, alunoNome: nome, checkedInAt: firebase.firestore.FieldValue.serverTimestamp() });
-            tx.update(slotRef, { checkinCount: count + 1 });
-          });
-        }).catch(function(e) {
+        if (!functionsApi) { alert('Check-in seguro temporariamente indisponível.'); return; }
+        functionsApi.httpsCallable('agendaCheckIn')({ slotId: slotId }).catch(function(e) {
           // Reverte o otimismo local
           agendaSetCheckins(agendaGetCheckins().filter(function(c) { return !(c.slotId === slotId && c.alunoEmail === email); }));
           var ss = agendaGetSlots(); for (var j = 0; j < ss.length; j++) { if (ss[j].id === slotId) { ss[j].checkinCount = Math.max(0, (ss[j].checkinCount || 1) - 1); break; } } agendaSetSlots(ss);
-          alert(e === 'lotado' ? 'Esgotado — alguém marcou antes de você.' : 'Não foi possível marcar o check-in.');
+          alert(e.code && e.code.indexOf('resource-exhausted') !== -1 ? 'Esgotado — alguém marcou antes de você.' : 'Não foi possível marcar o check-in.');
           agendaRenderSlotsAluno(slot.personalEmail);
         });
       }
@@ -210,17 +199,9 @@
       if (slot) { slot.checkinCount = Math.max(0, (slot.checkinCount || 1) - 1); agendaSetSlots(slots); }
       agendaRenderSlotsAluno(slot ? slot.personalEmail : null);
       if (!isDemo && db && auth && auth.currentUser) {
-        var uid = auth.currentUser.uid;
-        var slotRef = db.collection('agenda_slots').doc(slotId);
-        var ckRef = slotRef.collection('checkins').doc(uid);
-        db.runTransaction(function(tx) {
-          return tx.get(slotRef).then(function(doc) {
-            if (!doc.exists) return;
-            var count = doc.data().checkinCount || 0;
-            tx.delete(ckRef);
-            tx.update(slotRef, { checkinCount: Math.max(0, count - 1) });
-          });
-        }).catch(function(e) { console.warn('Erro ao cancelar check-in:', e.code || e); });
+        if (!functionsApi) { alert('Cancelamento seguro temporariamente indisponível.'); return; }
+        functionsApi.httpsCallable('agendaCancelCheckIn')({ slotId: slotId })
+          .catch(function(e) { console.warn('Erro ao cancelar check-in:', e.code || e); alert('Não foi possível cancelar o check-in. Atualize a página e tente novamente.'); });
       }
     }
 

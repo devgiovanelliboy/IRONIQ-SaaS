@@ -44,8 +44,9 @@ function ok(cond, msg) {
     personal: localStorage.getItem('ironqi_personal_logado'),
     admin: localStorage.getItem('ironqi_admin_logado')
   }));
-
-  await page.goto(SITE + '/app.html?demo', { waitUntil: 'domcontentloaded' });
+  // `serve` aplica clean URLs e redireciona /app.html para /app, descartando
+  // a query string. Abrir /app diretamente mantém ?demo.
+  await page.goto(SITE + '/app?demo', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => typeof window.login === 'function' && typeof window.navigate === 'function', null, { timeout: 20000 });
 
   // ── CASO 1: personal vê nav de personal ──
@@ -106,6 +107,7 @@ function ok(cond, msg) {
   ok(nav5.aluno && !nav5.personal, 'CASO5 cache sem perfil + flag presa -> nav volta para ALUNO');
   ok(f5.personal === null, 'CASO5 flag de personal de outra conta foi saneada no navigate()');
 
+  ok(perr.length === 0, 'nenhum erro de runtime no console/página');
   if (perr.length) console.log('PAGE ERRORS:', JSON.stringify(perr.slice(0, 5)));
   await browser.close();
   console.log(process.exitCode ? '\n❌ FALHOU' : '\n✅ TODOS OS CASOS PASSARAM');

@@ -59,9 +59,10 @@
 
     <h2>1. Quem é o controlador dos seus dados</h2>
     <p>
-      O responsável pelo tratamento dos dados coletados nesta plataforma é o <strong>operador da conta IRONIQ</strong>
-      (personal trainer ou academia) que contratou o plano e convidou você a se cadastrar.
-      Para exercer seus direitos ou obter esclarecimentos, entre em contato com ele diretamente.
+      A definição do controlador depende da relação contratual: a IRONIQ controla os dados necessários à conta,
+      segurança e cobrança; o personal trainer ou academia pode atuar como controlador dos dados de acompanhamento
+      dos próprios alunos. Dúvidas e solicitações podem ser enviadas para
+      <a href="mailto:contato.ironiq@gmail.com">contato.ironiq@gmail.com</a>.
     </p>
 
     <h2>2. Quais dados coletamos</h2>
@@ -90,6 +91,8 @@
     <p>Seus dados podem ser compartilhados apenas com:</p>
     <ul>
       <li><strong>Google Firebase</strong> — infraestrutura de autenticação, banco de dados e hospedagem (servidores nos EUA, com garantias adequadas via SCCs/GDPR);</li>
+      <li><strong>Cloudflare</strong> — proxy de segurança que autentica e encaminha solicitações de inteligência artificial;</li>
+      <li><strong>Groq</strong> — processamento dos dados enviados para geração assistida de treinos e sugestões alimentares;</li>
       <li><strong>Seu personal trainer / academia</strong> — para fins de acompanhamento e treinamento;</li>
       <li><strong>Autoridades competentes</strong> — quando exigido por lei ou ordem judicial.</li>
     </ul>
@@ -112,16 +115,24 @@
       <li>Revogar consentimento a qualquer momento;</li>
       <li>Peticionar à <strong>ANPD</strong> (Autoridade Nacional de Proteção de Dados).</li>
     </ul>
-    <p>Para exercer seus direitos, entre em contato com o responsável pela sua conta IRONIQ.</p>
+    <p>Para exercer seus direitos, escreva para <a href="mailto:contato.ironiq@gmail.com">contato.ironiq@gmail.com</a>. Poderemos solicitar confirmação de identidade antes de atender ao pedido.</p>
 
-    <h2>7. Segurança</h2>
+    <h2>7. Inteligência artificial e dados sensíveis</h2>
+    <p>
+      Informações fornecidas em formulários de treino ou alimentação, inclusive restrições, peso e objetivos,
+      podem ser enviadas à Groq por meio de um proxy da Cloudflare. Enviamos apenas os dados necessários à geração,
+      sem a senha de acesso. O conteúdo gerado é assistivo, pode conter erros e deve ser revisado por profissional habilitado.
+    </p>
+    <p>Dados referentes à saúde são dados pessoais sensíveis. Quando o tratamento depender de consentimento, ele poderá ser revogado sem afetar tratamentos anteriores realizados legitimamente.</p>
+
+    <h2>8. Segurança</h2>
     <p>
       Adotamos medidas técnicas e organizacionais para proteger seus dados, incluindo:
       autenticação segura via Firebase Auth, regras de acesso no banco de dados (Firestore Security Rules),
       transmissão criptografada via HTTPS/TLS e cabeçalhos HTTP de segurança.
     </p>
 
-    <h2>8. Cookies e armazenamento local</h2>
+    <h2>9. Cookies e armazenamento local</h2>
     <p>
       Utilizamos <code>localStorage</code> do navegador exclusivamente para manter sua sessão ativa
       durante o uso do aplicativo. Não utilizamos cookies de rastreamento nem publicidade comportamental.
@@ -129,13 +140,13 @@
       <strong>o SDK de Analytics não é carregado</strong> — nenhum dado de navegação é enviado ao Google Analytics.
     </p>
 
-    <h2>9. Menores de idade</h2>
+    <h2>10. Menores de idade</h2>
     <p>
       A plataforma não é destinada a menores de 18 anos sem consentimento dos responsáveis legais.
       Caso identifiquemos dados de menores coletados sem consentimento, procederemos com a exclusão imediata.
     </p>
 
-    <h2>10. Alterações a esta Política</h2>
+    <h2>11. Alterações a esta Política</h2>
     <p>
       Podemos atualizar esta Política periodicamente. Alterações significativas serão comunicadas
       por e-mail ou por aviso na plataforma. O uso contínuo após a notificação implica aceitação

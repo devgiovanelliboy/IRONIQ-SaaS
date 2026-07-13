@@ -300,6 +300,10 @@
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { alert('Informe um e-mail válido.'); return; }
       if (pass.length < 6) { alert('A senha deve ter no mínimo 6 caracteres.'); return; }
 
+      // Preserva somente a conta escolhida no modo demo; a limpeza abaixo zera
+      // o estado compartilhado para impedir vazamento entre sessões.
+      var _demoUsuarioLogin = (isDemo && !auth) ? _st.usuarios[email] : null;
+      var _demoPlanoLogin = (isDemo && !auth) ? _st.planos[email] : null;
       _limparEstadoSessao();
 
       const btn = document.getElementById('auth-btn');
@@ -310,12 +314,13 @@
 
       // Se Firebase Auth está disponível, SEMPRE usa Firebase — nunca demo cache — independente de isDemo
       if (isDemo && !auth) {
+        if (!_demoUsuarioLogin) { alert('Usuário não encontrado.'); btn.disabled = false; btn.textContent = 'Entrar'; return; }
+        if (_demoUsuarioLogin.senha !== pass) { alert('Senha incorreta.'); btn.disabled = false; btn.textContent = 'Entrar'; return; }
         var usuarios = _st.usuarios;
-        if (!usuarios[email]) { alert('Usuário não encontrado.'); btn.disabled = false; btn.textContent = 'Entrar'; return; }
-        if (usuarios[email].senha !== pass) { alert('Senha incorreta.'); btn.disabled = false; btn.textContent = 'Entrar'; return; }
+        if (_demoPlanoLogin) _st.planos[email] = _demoPlanoLogin;
 
         localStorage.setItem('ironqi_logado', email);
-        var dados = usuarios[email].dados || {};
+        var dados = _demoUsuarioLogin.dados || {};
         var perfil = dados.perfil || dados.tipo || '';
 
         document.getElementById('page-login').style.display = 'none';
@@ -365,7 +370,8 @@
               }
               // Sincroniza plano do Firestore para localStorage
               if (data.plano) _st.planos[email] = data.plano;
-              if (data.planoVencimento) _st.planoVencimento[email] = data.planoVencimento;
+              if (data.planoVencimento) _st.planoVencimento[email] = data.planoVencimento.toDate ? data.planoVencimento.toDate().toISOString() : data.planoVencimento;
+              if (data.trialExpira) _st.trialExpira[email] = data.trialExpira.toDate ? data.trialExpira.toDate().toISOString() : data.trialExpira;
               setFsUserData(email, data);
               saveUidMapping(email, cred.user.uid);
               sincronizarPlanoPersonal(data, email);
@@ -840,6 +846,8 @@
                   setFsUserData(lsEmail, _d);
                   saveUidMapping(lsEmail, uid2);
                   if (_d.plano) _st.planos[lsEmail] = _d.plano;
+                  if (_d.planoVencimento) _st.planoVencimento[lsEmail] = _d.planoVencimento.toDate ? _d.planoVencimento.toDate().toISOString() : _d.planoVencimento;
+                  if (_d.trialExpira) _st.trialExpira[lsEmail] = _d.trialExpira.toDate ? _d.trialExpira.toDate().toISOString() : _d.trialExpira;
                   if (_d.ultimoAceiteTreino) _st.ultimoAceite['treino_' + lsEmail] = _d.ultimoAceiteTreino;
                   if (_d.ultimoAceiteDieta) _st.ultimoAceite['dieta_' + lsEmail] = _d.ultimoAceiteDieta;
                   // Firestore é a FONTE DA VERDADE do papel. Se o cache local estava
@@ -901,6 +909,8 @@
                   db.collection('usuarios').doc(user.uid).update({ personal_vinculado: PERSONAL_PRINCIPAL }).catch(function() {});
                 }
                 if (data.plano) _st.planos[user.email] = data.plano;
+                if (data.planoVencimento) _st.planoVencimento[user.email] = data.planoVencimento.toDate ? data.planoVencimento.toDate().toISOString() : data.planoVencimento;
+                if (data.trialExpira) _st.trialExpira[user.email] = data.trialExpira.toDate ? data.trialExpira.toDate().toISOString() : data.trialExpira;
                 if (data.ultimoAceiteTreino) _st.ultimoAceite['treino_' + user.email] = data.ultimoAceiteTreino;
                 if (data.ultimoAceiteDieta) _st.ultimoAceite['dieta_' + user.email] = data.ultimoAceiteDieta;
                 setFsUserData(user.email, data);

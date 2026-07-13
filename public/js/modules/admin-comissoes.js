@@ -200,57 +200,14 @@
     }
 
     function adminPersonalAlterarTipo(email, tipo) {
-      // 1. Atualiza localStorage
-      var usuarios = _st.usuarios;
-      if (usuarios[email]) {
-        if (!usuarios[email].dados) usuarios[email].dados = {};
-        usuarios[email].dados.tipoPersonal = tipo;
-        _st.usuarios = usuarios;
-      }
-      // 2. Se virou Principal: substitui o PP anterior e atualiza configuracoes
-      if (tipo === 'personal_principal') {
-        var _antigoPP = PERSONAL_PRINCIPAL;
-        // Rebaixa o antigo PP para personal_interno (se diferente do novo)
-        if (_antigoPP && _antigoPP !== email && usuarios[_antigoPP]) {
-          if (!usuarios[_antigoPP].dados) usuarios[_antigoPP].dados = {};
-          usuarios[_antigoPP].dados.tipoPersonal = 'personal_interno';
-          _st.usuarios = usuarios;
-        }
-        PERSONAL_PRINCIPAL = email;
-        if (!isDemo && db) {
-          db.collection('configuracoes').doc('sistema').set({ personalPrincipal: email }, { merge: true })
-            .then(function() { alert('✅ ' + email + ' definido como Personal Principal.\nNovos alunos autônomos serão direcionados a ele.'); })
-            .catch(function(e) { console.warn('Erro ao salvar personal principal:', e); alert('✅ Salvo localmente. Erro ao salvar no servidor: ' + (e.code || e)); });
-        } else {
-          alert('✅ ' + email + ' definido como Personal Principal.');
-        }
-      } else if (email === PERSONAL_PRINCIPAL) {
-        // Removendo o tipo principal de quem ainda É o PERSONAL_PRINCIPAL
-        alert('⚠️ Atenção: ' + email + ' ainda está configurado como Personal Principal no sistema.\nDefina outro personal como Principal antes de alterar este tipo.\nA configuração de roteamento NÃO foi alterada.');
-        // Reverte o select no localStorage para o valor anterior
-        if (usuarios[email] && usuarios[email].dados) {
-          usuarios[email].dados.tipoPersonal = 'personal_principal';
-          _st.usuarios = usuarios;
-        }
+      if (!functionsApi) { alert('Alteração segura de papel indisponível. Publique as Cloud Functions.'); carregarAdminPersonais(); return; }
+      functionsApi.httpsCallable('setUserRole')({ targetEmail: email, tipoPersonal: tipo }).then(function() {
+        var cache = _st.usuarios;
+        if (cache[email]) { cache[email].dados.tipoPersonal = tipo; _st.usuarios = cache; }
+        if (tipo === 'personal_principal') PERSONAL_PRINCIPAL = email;
         carregarAdminPersonais();
-        return;
-      }
-      // 3. Atualiza doc do usuário no Firestore
-      if (!isDemo && db) {
-        var uid = emailToUid[email];
-        if (uid) {
-          db.collection('usuarios').doc(uid).update({ tipoPersonal: tipo }).catch(function(e) { console.warn('Erro tipoPersonal Firestore:', e); });
-        } else {
-          db.collection('uidMap').doc(email.replace(/\./g, ',')).get().then(function(mapDoc) {
-            if (mapDoc.exists) {
-              var foundUid = mapDoc.data().uid;
-              saveUidMapping(email, foundUid);
-              db.collection('usuarios').doc(foundUid).update({ tipoPersonal: tipo }).catch(function(e) { console.warn('Erro tipoPersonal Firestore (map):', e); });
-            }
-          }).catch(function() {});
-        }
-      }
-      carregarAdminPersonais();
+        alert('✅ Papel atualizado no servidor. O usuário deve relogar para renovar as permissões.');
+      }).catch(function(err) { carregarAdminPersonais(); alert('Erro ao alterar papel: ' + (err.message || err.code || err)); });
     }
 
     function adminPersonalAlterarLimite(email) {
@@ -262,6 +219,11 @@
       if (isNaN(num) || num < 0) { alert('Valor inválido.'); return; }
       pessoalLimites[email] = num;
       _st.personalLimites = pessoalLimites;
+      if (!isDemo && db) {
+        var limitePatch = {}; limitePatch[email] = num;
+        db.collection('configuracoes').doc('limites_alunos').set(limitePatch, { merge: true })
+          .catch(function(e) { alert('Erro ao salvar limite no servidor: ' + (e.code || e)); });
+      }
       carregarAdminPersonais();
     }
 
@@ -270,6 +232,7 @@
       var userStatus = _st.userStatus;
       userStatus[email] = 'bloqueado';
       _st.userStatus = userStatus;
+      _adminFsUpdate(email, { status: 'bloqueado' });
       carregarAdminPersonais();
     }
 
@@ -277,6 +240,7 @@
       var userStatus = _st.userStatus;
       userStatus[email] = 'ativo';
       _st.userStatus = userStatus;
+      _adminFsUpdate(email, { status: 'ativo' });
       carregarAdminPersonais();
     }
 
@@ -289,6 +253,8 @@
       if (!nova) return;
       if (!opcoes[nova]) { alert('Plano inválido. Use: personal_free, personal_pro ou personal_elite'); return; }
       _st.planos[email] = nova;
+      var vence = nova === 'personal_free' ? null : new Date(Date.now() + 30 * 86400000).toISOString();
+      _adminFsUpdate(email, { plano: nova, planoVencimento: vence }, null, function(e) { alert('Erro ao salvar plano: ' + e); });
       carregarAdminPersonais();
     }
 

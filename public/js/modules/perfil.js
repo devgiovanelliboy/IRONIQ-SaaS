@@ -426,15 +426,17 @@
       localStorage.removeItem('ironqi_protocolo_aluno');
       // Reseta todo o estado em memória — os dados serão recarregados do Firestore
       // após o próximo login, garantindo que nenhum dado de uma conta vaze para outra.
-      _st.usuarios = {};
+      // No demo, as contas seed são o próprio "banco" local e precisam
+      // sobreviver à troca de sessão. Em produção, o Firestore recarrega tudo.
+      if (!(isDemo && !auth)) _st.usuarios = {};
       _st.pendentes = [];
       _st.protocolos = [];
       _st.comissoes = [];
       _st.comissoesPagas = {};
-      _st.planos = {};
+      if (!(isDemo && !auth)) _st.planos = {};
       _st.planoVencimento = {};
       _st.trialExpira = {};
-      _st.trialConfig = { ativo: true, duracao: 48, mensagem: 'Teste grátis de 48h — aproveite todos os recursos!' };
+      _st.trialConfig = { ativo: true, duracao: 24, mensagem: 'Teste grátis de 24h — aproveite todos os recursos!' };
       _st.ultimoAceite = {};
       _st.ultimoAjuste = {};
       _st.agua = {};
