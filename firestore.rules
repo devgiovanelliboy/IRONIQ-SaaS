@@ -34,6 +34,13 @@ service cloud.firestore {
         resource.data.chat_atendente == request.auth.token.email
       );
 
+      // Aluno lê o doc do PRÓPRIO personal vinculado — necessário para a
+      // herança de plano (sincronizarPlanoPersonal/getPlanoUsuario lêem o
+      // campo 'plano' do personal para liberar Dieta/IMC ao aluno vinculado).
+      allow read: if request.auth != null
+        && get(/databases/$(database)/documents/usuarios/$(request.auth.uid))
+             .data.personal_vinculado == resource.data.email;
+
       // Dono cria o próprio doc — NÃO pode nascer com papel privilegiado (anti-escalação).
       // Papéis admin/personal_interno/personal_principal só via Admin SDK (backend/admin-roles.js).
       allow create: if request.auth != null && request.auth.uid == userId

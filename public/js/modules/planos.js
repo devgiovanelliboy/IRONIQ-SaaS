@@ -235,9 +235,11 @@
         if (!_st.planos[email]) _st.planos[email] = plano;
         return plano;
       }
-      // Fallback: aluno sem plano ganha START automaticamente
+      // Fallback: aluno sem plano é tratado como START para fins de UI,
+      // mas NÃO grava no cache — verificarAcessoPlano lê _st.planos direto,
+      // e gravar aqui matava a trava "sem plano → tela de planos" (a sidebar
+      // chamava esta função antes do gate rodar).
       if (perfil.indexOf('aluno_') === 0 || perfil === 'autonomo') {
-        _st.planos[email] = 'aluno_start';
         return 'aluno_start';
       }
       return null;

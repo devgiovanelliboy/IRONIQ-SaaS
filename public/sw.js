@@ -1,4 +1,4 @@
-var CACHE = 'ironiq-v29';
+var CACHE = 'ironiq-v30';
 var APP_SHELL = [
   '/',
   '/index.html',
@@ -41,7 +41,8 @@ var APP_SHELL = [
   '/js/modules/agenda.js',
   '/js/templates.js',
   '/js/router.js',
-  '/js/modules/auth.js'
+  '/js/modules/auth.js',
+  '/js/init.js'
 ];
 
 self.addEventListener('install', function(event) {

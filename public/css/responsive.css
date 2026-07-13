@@ -89,6 +89,8 @@
       border-radius: 12px !important;
       padding: 30px !important;
       margin: 0 auto 20px auto !important;
+      background-image: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0) 55%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 4px 20px rgba(0,0,0,0.25);
     }
     .refeicao-card {
       background: #141717;
@@ -96,6 +98,8 @@
       border-radius: 12px;
       padding: 20px;
       margin-bottom: 15px;
+      background-image: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0) 60%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 2px 12px rgba(0,0,0,0.2);
     }
     .refeicao-card h3 {
       margin: 0 0 12px;
@@ -251,9 +255,11 @@
       -webkit-tap-highlight-color: transparent;
       white-space: nowrap;
     }
+    .treino-tab:not(.active):hover { color: #ccc; background: #2A3232; }
     .treino-tab.active {
       background: #CCFF00;
       color: #0E1111;
+      box-shadow: 0 4px 14px rgba(204,255,0,0.25);
     }
     .treino-tab:active { transform: scale(0.95); }
 
@@ -263,6 +269,8 @@
       border: 1px solid #1F2525;
       border-radius: 16px;
       padding: 20px 18px;
+      background-image: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0) 55%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 4px 16px rgba(0,0,0,0.22);
     }
 
     /* ─── TREINO TABLE ─── */
@@ -271,6 +279,8 @@
       border: 1px solid #1F2525;
       border-radius: 16px;
       overflow: hidden;
+      background-image: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0) 40%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 4px 16px rgba(0,0,0,0.22);
     }
     .treino-empty {
       padding: 32px 16px;
@@ -288,7 +298,9 @@
       align-items: center;
       padding: 14px 16px;
       border-bottom: 1px solid #1A1F1F;
+      transition: background 0.15s ease;
     }
+    .treino-row:hover { background: rgba(255,255,255,0.015); }
     .treino-row:last-child { border-bottom: none; }
     .treino-row .ex-thumb {
       width: 36px;
@@ -398,7 +410,7 @@
     }
     .input-carga::-webkit-inner-spin-button,
     .input-carga::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-    .input-carga:focus { border-color: #CCFF00; }
+    .input-carga:focus { border-color: #CCFF00; box-shadow: 0 0 0 3px rgba(204,255,0,0.1); }
     .input-carga::placeholder { color: #555; font-weight: 400; font-size: 14px; }
 
     /* ─── OBSERVAÇÕES ─── */
@@ -424,7 +436,7 @@
       transition: border-color 0.2s;
       line-height: 1.6;
     }
-    #treino-ativo-obs:focus { border-color: #CCFF00; }
+    #treino-ativo-obs:focus { border-color: #CCFF00; box-shadow: 0 0 0 3px rgba(204,255,0,0.1); }
     #treino-ativo-obs::placeholder { color: #555; }
 
     /* ─── CONCLUIR BOTÃO ─── */
@@ -434,6 +446,7 @@
       padding: 16px;
       font-size: 16px;
       font-weight: 800;
+      box-shadow: 0 6px 20px rgba(204,255,0,0.18), 0 2px 6px rgba(0,0,0,0.3);
     }
 
     @media (max-width: 480px) {
@@ -468,7 +481,8 @@
       max-width: 400px;
       width: 100%;
       text-align: center;
-      box-shadow: 0 0 60px rgba(0,0,0,0.5);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 0 60px rgba(0,0,0,0.5), 0 0 40px rgba(204,255,0,0.04);
+      background-image: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0) 50%);
     }
     .dieta-blocker-card .lock-icon {
       font-size: 48px;
@@ -522,11 +536,14 @@
       display: flex;
       flex-direction: column;
       gap: 12px;
-      transition: border 0.2s, transform 0.2s;
+      transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.25s ease;
+      background-image: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0) 55%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 2px 10px rgba(0,0,0,0.2);
     }
     .aluno-card:hover {
       border-color: #2A3232;
       transform: translateY(-2px);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 10px 28px rgba(0,0,0,0.32), 0 0 24px rgba(204,255,0,0.04);
     }
     .aluno-card-header {
       display: flex;
@@ -588,6 +605,8 @@
     .aluno-card-actions button:hover {
       background: rgba(222, 255, 154, 0.1);
       border-color: #deff9a;
+      box-shadow: 0 2px 10px rgba(204,255,0,0.1);
+      transform: translateY(-1px);
     }
     .personal-stats-bar {
       display: flex; gap: 12px; overflow-x: auto;
@@ -602,6 +621,8 @@
       padding: 14px 18px;
       min-width: 120px;
       text-align: center;
+      background-image: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(255,255,255,0) 60%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 2px 10px rgba(0,0,0,0.2);
     }
     .stat-card .stat-num {
       font-size: 22px; font-weight: 800; color: #CCFF00;
@@ -624,6 +645,7 @@
     }
     .personal-home-search:focus {
       border-color: #CCFF00;
+      box-shadow: 0 0 0 3px rgba(204,255,0,0.1);
     }
     .personal-home-search::placeholder {
       color: #555;

@@ -30,28 +30,33 @@
     body {
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
       background: #0E1111;
-      background-image: radial-gradient(circle at 50% 0%, rgba(204,255,0,0.05) 0%, transparent 55%),
-                        radial-gradient(circle at 85% 60%, rgba(204,255,0,0.03) 0%, transparent 45%);
+      background-image: radial-gradient(circle at 50% 0%, rgba(204,255,0,0.06) 0%, transparent 55%),
+                        radial-gradient(circle at 85% 55%, rgba(204,255,0,0.03) 0%, transparent 45%),
+                        radial-gradient(circle at 10% 90%, rgba(204,255,0,0.025) 0%, transparent 40%);
       background-attachment: fixed;
       color: #E8E8E8; line-height: 1.6;
       -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
     }
     ::selection { background: #CCFF00; color: #0E1111; }
     a { color: inherit; text-decoration: none; }
     img { max-width: 100%; display: block; }
     .wrap { width: 100%; max-width: 1160px; margin: 0 auto; padding: 0 24px; }
 
-    h1 { font-size: clamp(38px, 6vw, 62px); font-weight: 800; letter-spacing: -1.5px; line-height: 1.05; }
+    h1 { font-size: clamp(36px, 6vw, 62px); font-weight: 800; letter-spacing: -1.5px; line-height: 1.06; }
     h2 { font-size: clamp(26px, 4vw, 40px); font-weight: 800; letter-spacing: -0.8px; line-height: 1.15; }
     h3 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
     p { color: #999; }
     .text-green { color: #CCFF00; }
+    .glow-green { color: #CCFF00; text-shadow: 0 0 34px rgba(204,255,0,0.35); }
     .logo { font-size: 22px; font-weight: 900; letter-spacing: -1px; }
     .logo span { color: #CCFF00; }
     .eyebrow { display: inline-flex; align-items: center; gap: 9px; font-size: 12px; font-weight: 700;
       letter-spacing: 1.5px; text-transform: uppercase; color: #CCFF00;
       background: rgba(204,255,0,0.08); border: 1px solid rgba(204,255,0,0.2);
       padding: 7px 14px; border-radius: 20px; }
+    .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: #CCFF00;
+      box-shadow: 0 0 10px rgba(204,255,0,0.8); }
 
     /* ─── BUTTONS (do app) ─── */
     .btn {
@@ -60,7 +65,7 @@
       display: inline-flex; align-items: center; justify-content: center; gap: 8px; -webkit-tap-highlight-color: transparent;
     }
     .btn svg { width: 17px; height: 17px; }
-    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(204,255,0,0.25); }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(204,255,0,0.3); }
     .btn:active { transform: translateY(0); }
     .btn-secondary { background: rgba(255,255,255,0.06); color: #E8E8E8; border: 1px solid rgba(255,255,255,0.1); }
     .btn-secondary:hover { background: rgba(255,255,255,0.1); box-shadow: 0 4px 20px rgba(255,255,255,0.08); }
@@ -88,7 +93,7 @@
     .nav { display: flex; align-items: center; justify-content: space-between; height: 70px; gap: 20px; }
     .brand { display: flex; align-items: center; gap: 10px; }
     .brand img { width: 32px; height: 32px; border-radius: 9px; }
-    .nav-mid { display: flex; gap: 32px; }
+    .nav-mid { display: flex; gap: 28px; }
     .nav-mid a { font-size: 14px; font-weight: 500; color: #888; transition: color 0.2s; }
     .nav-mid a:hover { color: #E8E8E8; }
     .nav-right { display: flex; align-items: center; gap: 14px; }
@@ -122,20 +127,21 @@
       opacity: 0; visibility: hidden; transition: opacity 0.32s ease, visibility 0.32s ease; }
     .mobile-menu.open { opacity: 1; visibility: visible; }
     .mm-inner { display: flex; flex-direction: column; height: 100%; max-width: 1160px; margin: 0 auto;
-      padding: calc(92px + env(safe-area-inset-top, 0px)) 26px calc(36px + env(safe-area-inset-bottom, 0px)); }
+      padding: calc(92px + env(safe-area-inset-top, 0px)) 26px calc(36px + env(safe-area-inset-bottom, 0px)); overflow-y: auto; }
     .mm-link { display: flex; align-items: center; justify-content: space-between; gap: 12px;
-      font-size: 24px; font-weight: 700; letter-spacing: -0.4px; color: #E8E8E8;
-      padding: 18px 16px; border-radius: 16px; border-bottom: 1px solid rgba(255,255,255,0.05);
+      font-size: 22px; font-weight: 700; letter-spacing: -0.4px; color: #E8E8E8;
+      padding: 16px 16px; border-radius: 16px; border-bottom: 1px solid rgba(255,255,255,0.05);
       opacity: 0; transform: translateY(14px);
       transition: transform 0.45s cubic-bezier(.2,.7,.2,1), opacity 0.45s, background 0.2s, color 0.2s; }
     .mm-link .ar { font-size: 18px; color: #CCFF00; opacity: 0.55; transition: transform 0.2s, opacity 0.2s; }
     .mm-link:active, .mm-link:hover { background: rgba(204,255,0,0.08); color: #CCFF00; }
     .mm-link:hover .ar { opacity: 1; transform: translate(2px,-2px); }
     .mobile-menu.open .mm-link { opacity: 1; transform: none; }
-    .mobile-menu.open .mm-link:nth-child(1) { transition-delay: 0.06s; }
-    .mobile-menu.open .mm-link:nth-child(2) { transition-delay: 0.12s; }
-    .mobile-menu.open .mm-link:nth-child(3) { transition-delay: 0.18s; }
-    .mobile-menu.open .mm-link:nth-child(4) { transition-delay: 0.24s; }
+    .mobile-menu.open .mm-link:nth-child(1) { transition-delay: 0.05s; }
+    .mobile-menu.open .mm-link:nth-child(2) { transition-delay: 0.1s; }
+    .mobile-menu.open .mm-link:nth-child(3) { transition-delay: 0.15s; }
+    .mobile-menu.open .mm-link:nth-child(4) { transition-delay: 0.2s; }
+    .mobile-menu.open .mm-link:nth-child(5) { transition-delay: 0.25s; }
     .mm-cta { margin-top: auto; display: flex; flex-direction: column; gap: 12px; padding-top: 28px;
       opacity: 0; transform: translateY(14px); transition: opacity 0.45s 0.3s, transform 0.45s 0.3s; }
     .mobile-menu.open .mm-cta { opacity: 1; transform: none; }
@@ -145,23 +151,29 @@
     }
 
     /* ─── HERO ─── */
-    .hero { padding: 60px 0 30px; }
+    .hero { padding: 64px 0 30px; position: relative; }
     .hero-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 50px; align-items: center; }
     @media (max-width: 940px) { .hero-grid { grid-template-columns: 1fr; gap: 36px; } }
-    .hero h1 { margin: 22px 0 22px; }
-    .hero .sub { font-size: clamp(16px, 2vw, 19px); color: #999; max-width: 48ch; margin-bottom: 30px; line-height: 1.55; }
+    .hero h1 { margin: 22px 0 20px; }
+    .hero .sub { font-size: clamp(16px, 2vw, 19px); color: #999; max-width: 50ch; margin-bottom: 30px; line-height: 1.55; }
+    .hero .sub strong { color: #cfd3cf; font-weight: 600; }
     .hero-cta { display: flex; gap: 14px; flex-wrap: wrap; }
-    .hero-tags { margin-top: 28px; display: flex; gap: 22px; flex-wrap: wrap; }
+    .hero-tags { margin-top: 28px; display: flex; gap: 20px; flex-wrap: wrap; }
     .hero-tags span { display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; color: #888; }
-    .hero-tags svg { width: 17px; height: 17px; color: #CCFF00; }
+    .hero-tags svg { width: 17px; height: 17px; color: #CCFF00; flex-shrink: 0; }
 
     /* auth card (estilo auth do app) */
+    .auth-wrap { position: relative; }
+    .auth-wrap::before { content: ''; position: absolute; inset: -40px; border-radius: 40px;
+      background: radial-gradient(circle at 50% 30%, rgba(204,255,0,0.09) 0%, transparent 65%);
+      pointer-events: none; filter: blur(6px); }
     .auth-card {
       background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 24px;
       padding: 30px 28px; box-shadow: 0 24px 70px rgba(0,0,0,0.45); position: relative; overflow: hidden;
+      backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
     }
     .auth-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-      background: linear-gradient(90deg, transparent, rgba(204,255,0,0.5), transparent); }
+      background: linear-gradient(90deg, transparent, rgba(204,255,0,0.6), transparent); }
     .auth-card .a-head { text-align: center; margin-bottom: 22px; }
     .auth-card .a-head .tg { font-size: 11px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; color: #CCFF00; }
     .auth-card .a-head h2 { font-size: 21px; font-weight: 700; letter-spacing: -0.3px; margin-top: 8px; }
@@ -171,18 +183,31 @@
     .a-foot a { color: #888; } .a-foot a:hover { color: #CCFF00; }
     .a-foot a.create { color: #CCFF00; font-weight: 700; }
     .a-sep { margin: 0 8px; color: #444; }
+    .a-trial { margin-top: 14px; text-align: center; font-size: 12px; color: #666;
+      border-top: 1px solid rgba(255,255,255,0.06); padding-top: 14px; }
+    .a-trial b { color: #CCFF00; font-weight: 700; }
 
     /* ─── APP PREVIEW (componentes reais do app) ─── */
-    .preview { margin: 56px 0 10px; }
+    .preview { margin: 64px 0 10px; position: relative; }
+    .preview::before { content: ''; position: absolute; left: 50%; top: -10px; transform: translateX(-50%);
+      width: min(720px, 90%); height: 200px; border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(204,255,0,0.08) 0%, transparent 70%);
+      pointer-events: none; filter: blur(10px); }
     .preview-frame {
-      max-width: 940px; margin: 0 auto; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 28px; padding: 22px; box-shadow: 0 50px 120px -50px rgba(204,255,0,0.18);
+      max-width: 940px; margin: 0 auto; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 28px; padding: 22px; box-shadow: 0 50px 120px -50px rgba(204,255,0,0.22), 0 30px 80px rgba(0,0,0,0.5);
+      position: relative;
     }
-    .pv-welcome { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
+    .pv-welcome { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
     .pv-welcome .h { font-size: 20px; font-weight: 800; letter-spacing: -0.4px; }
     .pv-welcome .s { font-size: 13px; color: #777; }
     .pv-badge { font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 20px; text-transform: uppercase;
       letter-spacing: 0.5px; background: rgba(204,255,0,0.12); color: #CCFF00; }
+    .pv-approved { display: flex; align-items: center; gap: 10px; background: rgba(204,255,0,0.06);
+      border: 1px solid rgba(204,255,0,0.2); border-radius: 14px; padding: 11px 14px; margin-bottom: 16px;
+      font-size: 13px; color: #cfd3cf; }
+    .pv-approved svg { width: 18px; height: 18px; color: #CCFF00; flex-shrink: 0; }
+    .pv-approved b { color: #CCFF00; font-weight: 700; }
     .weekly-grid { display: flex; gap: 8px; margin-bottom: 18px; }
     .weekly-day { flex: 1; height: 40px; border-radius: 10px; background: rgba(255,255,255,0.04);
       display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; color: #555; }
@@ -208,40 +233,85 @@
     .workout-item .sets { font-size: 14px; font-weight: 700; color: #CCFF00; }
 
     /* ─── SECTIONS ─── */
-    section.block { padding: 84px 0; }
-    .sec-head { text-align: center; max-width: 60ch; margin: 0 auto 48px; }
+    section.block { padding: 88px 0; }
+    .sec-head { text-align: center; max-width: 62ch; margin: 0 auto 48px; }
     .sec-head h2 { margin: 14px 0 12px; }
     .sec-head p { font-size: 16px; }
+
+    /* ─── COMO FUNCIONA ─── */
+    .steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; position: relative; }
+    @media (max-width: 980px) { .steps { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 560px) { .steps { grid-template-columns: 1fr; } }
+    .step-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 24px;
+      padding: 28px 24px; position: relative; overflow: hidden;
+      transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94), border-color 0.35s, box-shadow 0.35s; }
+    .step-card:hover { transform: translateY(-4px); border-color: rgba(204,255,0,0.22);
+      box-shadow: 0 20px 60px rgba(204,255,0,0.07); }
+    .step-card::after { content: ''; position: absolute; right: -30px; bottom: -30px; width: 110px; height: 110px;
+      border-radius: 50%; background: radial-gradient(circle, rgba(204,255,0,0.06) 0%, transparent 70%); pointer-events: none; }
+    .step-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .step-num { font-size: 12px; font-weight: 800; letter-spacing: 1.5px; color: #CCFF00;
+      background: rgba(204,255,0,0.1); border: 1px solid rgba(204,255,0,0.22); padding: 5px 12px; border-radius: 20px; }
+    .step-ic { width: 44px; height: 44px; border-radius: 13px; background: rgba(204,255,0,0.08);
+      display: flex; align-items: center; justify-content: center; }
+    .step-ic svg { width: 21px; height: 21px; color: #CCFF00; stroke-width: 2; }
+    .step-card h3 { font-size: 17px; margin-bottom: 8px; }
+    .step-card p { font-size: 14px; line-height: 1.55; }
+    .steps-note { margin-top: 26px; text-align: center; font-size: 13.5px; color: #777; }
+    .steps-note b { color: #CCFF00; font-weight: 700; }
 
     /* feature cards (card-premium do app) */
     .feat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
     .card-premium { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 24px;
       padding: 28px; transition: all 0.35s cubic-bezier(0.25,0.46,0.45,0.94); position: relative; overflow: hidden; }
     .card-premium::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(204,255,0,0.3), transparent); opacity: 0; transition: opacity 0.3s; }
+      background: linear-gradient(90deg, transparent, rgba(204,255,0,0.35), transparent); opacity: 0; transition: opacity 0.3s; }
     .card-premium:hover { transform: translateY(-4px); border-color: rgba(204,255,0,0.2);
       box-shadow: 0 20px 60px rgba(204,255,0,0.08), 0 0 40px rgba(204,255,0,0.03); }
     .card-premium:hover::before { opacity: 1; }
     .feat-icon { width: 52px; height: 52px; border-radius: 15px; background: rgba(204,255,0,0.1);
-      display: flex; align-items: center; justify-content: center; margin-bottom: 18px; }
+      display: flex; align-items: center; justify-content: center; margin-bottom: 18px;
+      transition: transform 0.3s, box-shadow 0.3s; }
+    .card-premium:hover .feat-icon { transform: scale(1.06); box-shadow: 0 0 24px rgba(204,255,0,0.15); }
     .feat-icon svg { width: 25px; height: 25px; color: #CCFF00; stroke-width: 2; }
     .card-premium h3 { font-size: 18px; margin-bottom: 8px; }
     .card-premium p { font-size: 14.5px; line-height: 1.55; }
-    .card-premium .tagrole { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
-      color: #CCFF00; margin-bottom: 14px; display: inline-block; }
 
     /* audience split */
     .aud { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
     @media (max-width: 860px) { .aud { grid-template-columns: 1fr; } }
-    .aud-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 24px; padding: 36px 32px; }
+    .aud-card { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); border-radius: 24px;
+      padding: 36px 32px; position: relative; overflow: hidden;
+      transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94), border-color 0.35s, box-shadow 0.35s; }
+    .aud-card:hover { transform: translateY(-4px); box-shadow: 0 24px 70px rgba(0,0,0,0.4); }
     .aud-card.green { border-color: rgba(204,255,0,0.22); background: rgba(204,255,0,0.03); }
+    .aud-card.green::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(204,255,0,0.55), transparent); }
     .aud-card .role { font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #CCFF00; }
     .aud-card h3 { margin: 12px 0 8px; font-size: 24px; }
     .aud-card > p { font-size: 15px; margin-bottom: 22px; }
-    .aud-list { list-style: none; }
+    .aud-list { list-style: none; margin-bottom: 26px; }
     .aud-list li { display: flex; align-items: center; gap: 12px; padding: 12px 0; font-size: 14.5px; color: #cfd3cf;
       border-top: 1px solid rgba(255,255,255,0.05); }
     .aud-list li svg { width: 18px; height: 18px; color: #CCFF00; flex-shrink: 0; }
+
+    /* ─── DEPOIMENTOS ─── */
+    .tstm-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    @media (max-width: 960px) { .tstm-grid { grid-template-columns: 1fr; max-width: 520px; margin: 0 auto; } }
+    .tstm { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 24px;
+      padding: 28px; display: flex; flex-direction: column; gap: 18px;
+      transition: transform 0.35s cubic-bezier(0.25,0.46,0.45,0.94), border-color 0.35s, box-shadow 0.35s; }
+    .tstm:hover { transform: translateY(-4px); border-color: rgba(204,255,0,0.18); box-shadow: 0 20px 60px rgba(204,255,0,0.06); }
+    .tstm .stars { display: flex; gap: 3px; }
+    .tstm .stars svg { width: 15px; height: 15px; color: #CCFF00; fill: #CCFF00; }
+    .tstm .quote { font-size: 14.5px; color: #cfd3cf; line-height: 1.6; flex: 1; }
+    .tstm .who { display: flex; align-items: center; gap: 12px; }
+    .tstm .av { width: 42px; height: 42px; border-radius: 50%; background: rgba(204,255,0,0.12);
+      border: 1px solid rgba(204,255,0,0.25); color: #CCFF00; font-size: 14px; font-weight: 800;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .tstm .who .nm { font-size: 14px; font-weight: 700; color: #E8E8E8; }
+    .tstm .who .rl { font-size: 12px; color: #777; }
+    .tstm-note { text-align: center; font-size: 12px; color: #555; margin-top: 22px; }
 
     /* ─── PRICING (plan-card premium do app) ─── */
     .toggle { display: flex; justify-content: center; margin-bottom: 40px; }
@@ -252,11 +322,14 @@
     .seg button.on { background: #CCFF00; color: #0E1111; }
     .plans-grid { display: none; gap: 20px; max-width: 760px; margin: 0 auto; grid-template-columns: repeat(2, 1fr); }
     .plans-grid.show { display: grid; }
+    .plans-grid.cols3 { max-width: 1100px; grid-template-columns: repeat(3, 1fr); }
+    @media (max-width: 960px) { .plans-grid.cols3 { grid-template-columns: 1fr; max-width: 400px; } }
     @media (max-width: 720px) { .plans-grid { grid-template-columns: 1fr; max-width: 400px; } }
     .plan-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 24px;
-      padding: 32px 28px; text-align: center; transition: all 0.35s cubic-bezier(0.25,0.46,0.45,0.94); position: relative; }
+      padding: 32px 28px; text-align: center; transition: all 0.35s cubic-bezier(0.25,0.46,0.45,0.94); position: relative;
+      display: flex; flex-direction: column; }
     .plan-card:hover { transform: translateY(-6px); border-color: rgba(204,255,0,0.15); box-shadow: 0 24px 80px rgba(0,0,0,0.4); }
-    .plan-card.featured { background: rgba(204,255,0,0.04); border-color: rgba(204,255,0,0.2); box-shadow: 0 0 40px rgba(204,255,0,0.05); }
+    .plan-card.featured { background: rgba(204,255,0,0.04); border-color: rgba(204,255,0,0.22); box-shadow: 0 0 40px rgba(204,255,0,0.05); }
     .plan-card.featured::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
       background: linear-gradient(90deg, transparent, #CCFF00, transparent); }
     .plan-badge { position: absolute; top: 16px; right: 16px; background: rgba(204,255,0,0.12); color: #CCFF00;
@@ -265,20 +338,30 @@
       display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
     .plan-icon svg { width: 27px; height: 27px; color: #CCFF00; }
     .plan-name { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 4px; }
-    .plan-price { font-size: 36px; font-weight: 800; color: #fff; margin-bottom: 4px; }
-    .plan-price span { font-size: 16px; font-weight: 400; color: #888; }
-    .plan-desc { font-size: 14px; color: #666; margin-bottom: 24px; }
-    .plan-features { list-style: none; margin: 0 0 28px; text-align: left; }
+    .plan-price { font-size: 36px; font-weight: 800; color: #fff; margin-bottom: 4px; letter-spacing: -1px; }
+    .plan-price span { font-size: 16px; font-weight: 400; color: #888; letter-spacing: 0; }
+    .plan-limit { display: inline-block; font-size: 12px; font-weight: 700; color: #CCFF00;
+      background: rgba(204,255,0,0.08); border: 1px solid rgba(204,255,0,0.18); border-radius: 20px;
+      padding: 4px 12px; margin: 4px auto 10px; }
+    .plan-desc { font-size: 14px; color: #666; margin-bottom: 20px; }
+    .plan-features { list-style: none; margin: 0 0 28px; text-align: left; flex: 1; }
     .plan-features li { display: flex; align-items: center; gap: 10px; padding: 10px 0; font-size: 14px; color: #bbb;
       border-bottom: 1px solid rgba(255,255,255,0.04); }
     .plan-features li:last-child { border-bottom: none; }
     .plan-features li svg { width: 16px; height: 16px; color: #CCFF00; flex-shrink: 0; }
     .plan-btn { width: 100%; padding: 14px; border-radius: 14px; font-weight: 700; font-size: 15px; }
-    .pnote { text-align: center; color: #666; font-size: 13px; margin-top: 26px; }
+    .trial-strip { max-width: 760px; margin: 22px auto 0; display: flex; align-items: center; justify-content: center;
+      gap: 10px; background: rgba(204,255,0,0.05); border: 1px dashed rgba(204,255,0,0.3); border-radius: 16px;
+      padding: 14px 18px; font-size: 13.5px; color: #b9c3a8; text-align: center; flex-wrap: wrap; }
+    .trial-strip svg { width: 17px; height: 17px; color: #CCFF00; flex-shrink: 0; }
+    .trial-strip b { color: #CCFF00; font-weight: 700; }
+    .pnote { text-align: center; color: #666; font-size: 13px; margin-top: 20px; }
 
     /* ─── FAQ ─── */
     .faq { max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
-    .qa { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px; overflow: hidden; }
+    .qa { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 16px;
+      overflow: hidden; transition: border-color 0.25s; }
+    .qa:hover, .qa[open] { border-color: rgba(204,255,0,0.16); }
     .qa summary { list-style: none; cursor: pointer; padding: 20px 22px; font-size: 16px; font-weight: 600;
       display: flex; justify-content: space-between; align-items: center; gap: 16px; }
     .qa summary::-webkit-details-marker { display: none; }
@@ -288,10 +371,15 @@
 
     /* ─── CTA (banner-free do app) ─── */
     .endcta { background: linear-gradient(135deg, #1A2E00 0%, #0E1111 100%); border: 1px solid rgba(204,255,0,0.3);
-      border-radius: 28px; padding: 64px 36px; text-align: center; }
-    .endcta h2 { margin-bottom: 14px; }
-    .endcta p { font-size: 17px; color: #b9c3a8; margin: 0 auto 30px; max-width: 46ch; }
-    .endcta .hero-cta { justify-content: center; }
+      border-radius: 28px; padding: 68px 36px; text-align: center; position: relative; overflow: hidden; }
+    .endcta::before { content: ''; position: absolute; top: -60px; left: 50%; transform: translateX(-50%);
+      width: 420px; height: 200px; border-radius: 50%;
+      background: radial-gradient(ellipse at center, rgba(204,255,0,0.14) 0%, transparent 70%); pointer-events: none; }
+    .endcta .eyebrow { margin-bottom: 18px; }
+    .endcta h2 { margin-bottom: 14px; position: relative; }
+    .endcta p { font-size: 17px; color: #b9c3a8; margin: 0 auto 30px; max-width: 48ch; position: relative; }
+    .endcta .hero-cta { justify-content: center; position: relative; }
+    .endcta .mini { margin-top: 20px; font-size: 13px; color: #7d8a6a; position: relative; }
 
     /* ─── FOOTER ─── */
     footer { border-top: 1px solid rgba(255,255,255,0.06); padding: 54px 0 40px; }
@@ -307,7 +395,14 @@
     /* reveal */
     .rv { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
     .rv.in { opacity: 1; transform: none; }
-    @media (prefers-reduced-motion: reduce) { .rv { opacity: 1; transform: none; } html { scroll-behavior: auto; } }
+    .rv-d1.in { transition-delay: 0.08s; }
+    .rv-d2.in { transition-delay: 0.16s; }
+    .rv-d3.in { transition-delay: 0.24s; }
+    @media (prefers-reduced-motion: reduce) {
+      .rv { opacity: 1; transform: none; transition: none; }
+      html { scroll-behavior: auto; }
+      .btn:hover, .card-premium:hover, .plan-card:hover, .aud-card:hover, .tstm:hover, .step-card:hover { transform: none; }
+    }
   </style>
 </head>
 <body>
@@ -317,6 +412,7 @@
     <div class="wrap nav">
       <a class="brand" href="#top"><img src="logo.webp" alt="IRONIQ"><span class="logo">IRON<span>IQ</span></span></a>
       <nav class="nav-mid">
+        <a href="#como-funciona">Como funciona</a>
         <a href="#recursos">Recursos</a>
         <a href="#publico">Para quem é</a>
         <a href="#planos">Planos</a>
@@ -324,7 +420,7 @@
       </nav>
       <div class="nav-right">
         <a class="enter" href="#acesso" onclick="focoLogin()">Entrar</a>
-        <a class="btn cta-desktop" href="app.html">Criar conta</a>
+        <a class="btn cta-desktop" href="app.html">Testar 24h grátis</a>
         <button class="menu-btn" id="menuBtn" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="mobileMenu">
           <span class="bars"><i></i><i></i><i></i></span>
         </button>
@@ -335,13 +431,14 @@
   <!-- MENU MOBILE -->
   <div class="mobile-menu" id="mobileMenu" aria-hidden="true">
     <nav class="mm-inner">
+      <a class="mm-link" href="#como-funciona">Como funciona <span class="ar">↗</span></a>
       <a class="mm-link" href="#recursos">Recursos <span class="ar">↗</span></a>
       <a class="mm-link" href="#publico">Para quem é <span class="ar">↗</span></a>
       <a class="mm-link" href="#planos">Planos <span class="ar">↗</span></a>
       <a class="mm-link" href="#faq">Dúvidas <span class="ar">↗</span></a>
       <div class="mm-cta">
-        <a class="btn btn-block" href="app.html">Criar conta</a>
-        <a class="btn btn-secondary btn-block" href="#acesso" onclick="focoLogin()">Já sou aluno · Entrar</a>
+        <a class="btn btn-block" href="app.html">Criar conta · 24h grátis</a>
+        <a class="btn btn-secondary btn-block" href="#acesso" onclick="focoLogin()">Já tenho conta · Entrar</a>
       </div>
     </nav>
   </div>
@@ -353,44 +450,47 @@
     <div class="wrap">
       <div class="hero-grid">
         <div>
-          <span class="eyebrow rv">Treino · Dieta · IA</span>
-          <h1 class="rv">Treinos inteligentes que <span class="text-green">evoluem com você</span></h1>
-          <p class="sub rv">A IA monta seu treino e sua dieta a partir do seu objetivo, seu personal aprova e libera, e você acompanha cada carga, cada refeição e cada quilo — tudo em um app só.</p>
+          <span class="eyebrow rv"><span class="dot"></span>IA + validação humana</span>
+          <h1 class="rv">A IA monta. O personal aprova. <span class="glow-green">Você evolui.</span></h1>
+          <p class="sub rv">Em minutos, a inteligência artificial gera seu treino e sua dieta a partir do seu objetivo. Antes de chegar até você, <strong>um personal trainer de verdade revisa e aprova cada série e cada refeição</strong>. Nada de ficha genérica: método, acompanhamento e evolução em gráficos.</p>
           <div class="hero-cta rv">
-            <a class="btn" href="app.html">Começar agora
+            <a class="btn" href="app.html">Testar 24h grátis
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
             </a>
-            <a class="btn btn-secondary" href="#recursos">Ver recursos</a>
+            <a class="btn btn-secondary" href="#como-funciona">Ver como funciona</a>
           </div>
           <div class="hero-tags rv">
-            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> App instalável</span>
-            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Treino + dieta por IA</span>
-            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Acompanhado por personal</span>
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Trial de 24h para alunos</span>
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Todo protocolo passa por um personal</span>
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Cancele quando quiser</span>
           </div>
         </div>
 
         <!-- LOGIN -->
-        <div class="auth-card rv" id="acesso">
-          <div class="a-head">
-            <div class="tg">Acesso do aluno</div>
-            <h2>Entre para continuar</h2>
-          </div>
-          <form id="loginForm" autocomplete="off" novalidate>
-            <div class="field">
-              <label for="email">E-mail</label>
-              <input type="email" id="email" placeholder="seu@email.com" autocomplete="email">
+        <div class="auth-wrap rv">
+          <div class="auth-card" id="acesso">
+            <div class="a-head">
+              <div class="tg">Área do aluno e do personal</div>
+              <h2>Entre para continuar</h2>
             </div>
-            <div class="field">
-              <label for="senha">Senha</label>
-              <input type="password" id="senha" placeholder="Sua senha" autocomplete="current-password">
+            <form id="loginForm" autocomplete="off" novalidate>
+              <div class="field">
+                <label for="email">E-mail</label>
+                <input type="email" id="email" placeholder="seu@email.com" autocomplete="email">
+              </div>
+              <div class="field">
+                <label for="senha">Senha</label>
+                <input type="password" id="senha" placeholder="Sua senha" autocomplete="current-password">
+              </div>
+              <div class="a-err" id="loginErr"></div>
+              <button type="submit" class="btn btn-block" id="loginBtn">Entrar</button>
+            </form>
+            <div class="a-foot">
+              <a href="#" onclick="resetarSenha(); return false;">Esqueceu a senha?</a>
+              <span class="a-sep">·</span>
+              <a class="create" href="app.html">Criar conta</a>
             </div>
-            <div class="a-err" id="loginErr"></div>
-            <button type="submit" class="btn btn-block" id="loginBtn">Entrar</button>
-          </form>
-          <div class="a-foot">
-            <a href="#" onclick="resetarSenha(); return false;">Esqueceu a senha?</a>
-            <span class="a-sep">·</span>
-            <a class="create" href="app.html">Criar conta</a>
+            <div class="a-trial">Novo por aqui? Crie sua conta e <b>teste grátis por 24h</b> — sem cartão.</div>
           </div>
         </div>
       </div>
@@ -404,6 +504,10 @@
               <div class="s">Pronto para o treino de hoje?</div>
             </div>
             <span class="pv-badge">Plano Pro</span>
+          </div>
+          <div class="pv-approved">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
+            <span>Protocolo de hipertrofia <b>revisado e aprovado</b> pelo seu personal</span>
           </div>
           <div class="weekly-grid">
             <div class="weekly-day completed">S</div>
@@ -438,8 +542,54 @@
     </div>
   </section>
 
+  <!-- COMO FUNCIONA -->
+  <section class="block" id="como-funciona">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="eyebrow">Como funciona</span>
+        <h2>Do cadastro ao primeiro treino <span class="text-green">em 4 passos</span></h2>
+        <p>A velocidade da IA com a responsabilidade de um profissional. É assim que seu protocolo nasce.</p>
+      </div>
+      <div class="steps">
+        <div class="step-card rv">
+          <div class="step-top">
+            <span class="step-num">PASSO 1</span>
+            <span class="step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M2 21a8 8 0 0 1 13.292-6"/><circle cx="10" cy="8" r="5"/><path d="M19 16v6M16 19h6"/></svg></span>
+          </div>
+          <h3>Crie sua conta</h3>
+          <p>Conte seu objetivo, nível e rotina em poucos minutos. Alunos têm 24h grátis para conhecer tudo.</p>
+        </div>
+        <div class="step-card rv rv-d1">
+          <div class="step-top">
+            <span class="step-num">PASSO 2</span>
+            <span class="step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v1a3 3 0 0 0-3 3 3 3 0 0 0 0 6 3 3 0 0 0 3 3v1a3 3 0 0 0 6 0v-1a3 3 0 0 0 3-3 3 3 0 0 0 0-6 3 3 0 0 0-3-3V5a3 3 0 0 0-3-3Z"/></svg></span>
+          </div>
+          <h3>A IA gera seu protocolo</h3>
+          <p>Treino completo e plano alimentar sob medida — séries, cargas, refeições — montados para o seu corpo e a sua meta.</p>
+        </div>
+        <div class="step-card rv rv-d2">
+          <div class="step-top">
+            <span class="step-num">PASSO 3</span>
+            <span class="step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg></span>
+          </div>
+          <h3>Um personal revisa e aprova</h3>
+          <p>Nenhum protocolo chega a você sem passar por um profissional real, que ajusta o que for preciso antes de liberar.</p>
+        </div>
+        <div class="step-card rv rv-d3">
+          <div class="step-top">
+            <span class="step-num">PASSO 4</span>
+            <span class="step-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M16 7h6v6M22 7l-8.5 8.5-5-5L2 17"/></svg></span>
+          </div>
+          <h3>Você treina e vê a evolução</h3>
+          <p>Registre cargas e refeições, fale com o personal pelo chat e acompanhe o gráfico subir ciclo após ciclo.</p>
+        </div>
+      </div>
+      <p class="steps-note rv">E para o personal? A cada protocolo aceito pelo aluno, <b>a comissão cai automaticamente no seu painel</b>.</p>
+    </div>
+  </section>
+
   <!-- RECURSOS -->
-  <section class="block" id="recursos">
+  <section class="block" id="recursos" style="padding-top: 0;">
     <div class="wrap">
       <div class="sec-head rv">
         <span class="eyebrow">Recursos</span>
@@ -449,33 +599,33 @@
       <div class="feat-grid">
         <div class="card-premium rv">
           <div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v1a3 3 0 0 0-3 3 3 3 0 0 0 0 6 3 3 0 0 0 3 3v1a3 3 0 0 0 6 0v-1a3 3 0 0 0 3-3 3 3 0 0 0 0-6 3 3 0 0 0-3-3V5a3 3 0 0 0-3-3Z"/></svg></div>
-          <h3>Treino por IA</h3>
-          <p>Protocolo montado a partir do seu objetivo, nível e histórico — e ajustável dentro do ciclo.</p>
+          <h3>Treino que se adapta a você</h3>
+          <p>Chega de ficha copiada. A IA monta o protocolo a partir do seu objetivo, nível e histórico — e você pode pedir ajuste dentro do próprio ciclo.</p>
         </div>
         <div class="card-premium rv">
           <div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2M7 2v20M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7"/></svg></div>
-          <h3>Dieta personalizada</h3>
-          <p>Plano alimentar sob medida e cálculo de IMC no plano Pro, alinhado ao seu treino.</p>
+          <h3>Dieta alinhada ao treino</h3>
+          <p>Plano alimentar gerado sob medida e avaliação física com IMC e dobras — porque resultado se constrói na academia e no prato.</p>
         </div>
         <div class="card-premium rv">
           <div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg></div>
-          <h3>Evolução em gráficos</h3>
-          <p>Acompanhe cargas, peso e sequência de treinos com gráficos que mostram o progresso real.</p>
+          <h3>Progresso que você enxerga</h3>
+          <p>Cargas, peso, IMC e sequência de treinos em gráficos claros. Quando a evolução aparece na tela, a motivação para de depender de força de vontade.</p>
         </div>
         <div class="card-premium rv">
           <div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
-          <h3>Chat com o personal</h3>
-          <p>Tire dúvidas, peça ajustes e fale direto com o seu profissional sem sair do app.</p>
+          <h3>Seu personal a uma mensagem</h3>
+          <p>Dúvida na execução? Quer trocar um exercício? Chat direto com o profissional que acompanha você, sem sair do app.</p>
         </div>
         <div class="card-premium rv">
           <div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
-          <h3>Agenda de aulas</h3>
-          <p>O personal cria horários com vagas e repetição semanal; o aluno faz check-in pelo app.</p>
+          <h3>Aulas presenciais organizadas</h3>
+          <p>O personal abre horários com vagas e repetição semanal; o aluno reserva e faz check-in pelo app. Agenda cheia, sem planilha nem WhatsApp.</p>
         </div>
         <div class="card-premium rv">
           <div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-          <h3>Comissões automáticas</h3>
-          <p>O personal recebe por cada protocolo aceito, com painel de comissões e controle de pagamentos.</p>
+          <h3>Comissão sem burocracia</h3>
+          <p>Cada protocolo aceito vira comissão registrada automaticamente, com painel de ganhos e controle de pagamentos. Você ensina; o app faz as contas.</p>
         </div>
       </div>
     </div>
@@ -486,34 +636,93 @@
     <div class="wrap">
       <div class="sec-head rv">
         <span class="eyebrow">Para quem é</span>
-        <h2>Feito pra quem treina e pra quem ensina</h2>
+        <h2>Dois lados do mesmo treino</h2>
+        <p>O aluno ganha método e acompanhamento. O personal ganha tempo, escala e uma nova fonte de renda.</p>
       </div>
       <div class="aud">
         <div class="aud-card rv">
-          <span class="role">Aluno</span>
-          <h3>Evolua com método</h3>
-          <p>Treino e dieta sob medida, no seu ritmo, com o acompanhamento de um personal de verdade.</p>
+          <span class="role">Para quem treina</span>
+          <h3>Pare de treinar no escuro</h3>
+          <p>Treino e dieta feitos para o seu corpo, validados por um personal de verdade — e a prova da sua evolução em gráficos.</p>
           <ul class="aud-list">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Treino e dieta personalizados</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Protocolo de treino e dieta sob medida</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Aprovação humana em cada protocolo</li>
             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Gráficos de carga, peso e IMC</li>
             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Chat direto com o personal</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Aviso antes do ciclo vencer</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> 24h grátis para testar tudo</li>
           </ul>
-          <a class="btn btn-outline" href="app.html">Quero treinar</a>
+          <a class="btn btn-outline" href="app.html">Começar a treinar</a>
         </div>
         <div class="aud-card green rv">
-          <span class="role">Personal</span>
-          <h3>Gerencie e fature mais</h3>
-          <p>Aprove protocolos em segundos, organize a agenda e veja a comissão entrar a cada treino aceito.</p>
+          <span class="role">Para quem ensina</span>
+          <h3>Multiplique seu alcance — e sua renda</h3>
+          <p>A IA prepara o protocolo, você revisa e aprova em segundos. Cada aceite do aluno vira comissão no seu painel.</p>
           <ul class="aud-list">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Painel com toda a sua base</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Aprovação de treino/dieta em 1 toque</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Comissão por protocolo aceito</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Agenda, equipe e delegação</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Painel com toda a sua base de alunos</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Aprovação de treino e dieta em 1 toque</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Comissão automática por protocolo aceito</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Agenda de aulas com vagas e check-in</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Comece grátis com até 2 alunos</li>
           </ul>
-          <a class="btn" href="app.html">Gerenciar alunos</a>
+          <a class="btn" href="app.html">Começar grátis como personal</a>
         </div>
       </div>
+    </div>
+  </section>
+
+  <!-- DEPOIMENTOS -->
+  <section class="block" id="depoimentos" style="padding-top: 0;">
+    <div class="wrap">
+      <div class="sec-head rv">
+        <span class="eyebrow">Quem usa, sente</span>
+        <h2>Resultados que aparecem <span class="text-green">no gráfico</span></h2>
+        <p>O que alunos e personais encontram no IRONIQ no dia a dia.</p>
+      </div>
+      <div class="tstm-grid">
+        <div class="tstm rv">
+          <div class="stars">
+            <svg viewBox="0 0 24 24"><path d="m12 2 2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21 8 14 2 9.4h7.6z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="m12 2 2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21 8 14 2 9.4h7.6z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="m12 2 2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21 8 14 2 9.4h7.6z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="m12 2 2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21 8 14 2 9.4h7.6z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="m12 2 2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21 8 14 2 9.4h7.6z"/></svg>
+          </div>
+          <p class="quote">"Eu treinava há dois anos sem sair do lugar. Com o protocolo aprovado pelo personal, em um ciclo já vi a carga do supino subir no gráfico. Saber que alguém revisou meu treino muda tudo."</p>
+          <div class="who">
+            <span class="av">MC</span>
+            <div><div class="nm">Marina C.</div><div class="rl">Aluna · plano PRO</div></div>
+          </div>
+        </div>
+        <div class="tstm rv rv-d1">
+          <div class="stars">
+            <svg viewBox="0 0 24 24"><path d="m12 2 2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21 8 14 2 9.4h7.6z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="m12 2 2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21 8 14 2 9.4h7.6z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="m12 2 2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21 8 14 2 9.4h7.6z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="m12 2 2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21 8 14 2 9.4h7.6z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="m12 2 2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21 8 14 2 9.4h7.6z"/></svg>
+          </div>
+          <p class="quote">"A IA me entrega o protocolo pronto pra revisar. O que eu levava uma hora montando, aprovo em minutos — e a comissão de cada aceite aparece direto no painel. Sobra tempo pras aulas presenciais."</p>
+          <div class="who">
+            <span class="av">RA</span>
+            <div><div class="nm">Rafael A.</div><div class="rl">Personal trainer · plano PRO</div></div>
+          </div>
+        </div>
+        <div class="tstm rv rv-d2">
+          <div class="stars">
+            <svg viewBox="0 0 24 24"><path d="m12 2 2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21 8 14 2 9.4h7.6z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="m12 2 2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21 8 14 2 9.4h7.6z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="m12 2 2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21 8 14 2 9.4h7.6z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="m12 2 2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21 8 14 2 9.4h7.6z"/></svg>
+            <svg viewBox="0 0 24 24"><path d="m12 2 2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21 8 14 2 9.4h7.6z"/></svg>
+          </div>
+          <p class="quote">"O que me segurou foi o chat. Travei num exercício, mandei mensagem e o personal ajustou o treino no mesmo dia. Dieta e treino no mesmo app, sem caderninho, sem print de PDF."</p>
+          <div class="who">
+            <span class="av">TS</span>
+            <div><div class="nm">Thiago S.</div><div class="rl">Aluno · plano START</div></div>
+          </div>
+        </div>
+      </div>
+      <p class="tstm-note rv">Depoimentos ilustrativos, representativos da experiência na plataforma.</p>
     </div>
   </section>
 
@@ -522,8 +731,8 @@
     <div class="wrap">
       <div class="sec-head rv">
         <span class="eyebrow">Planos</span>
-        <h2>Escolha o seu</h2>
-        <p>Para alunos que querem evoluir e para profissionais que querem crescer.</p>
+        <h2>Um plano para cada fase da sua evolução</h2>
+        <p>Preço de lanche, estrutura de assessoria. Sem fidelidade, sem multa: cancele quando quiser.</p>
       </div>
 
       <div class="toggle rv">
@@ -537,64 +746,87 @@
       <div class="plans-grid show" id="plan-a">
         <div class="plan-card rv">
           <div class="plan-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6.5 6.5 11 11M21 21l-1-1M3 3l1 1M18 22l4-4M2 6l4-4M3 10l7-7M14 21l7-7"/></svg></div>
-          <div class="plan-name">Aluno Start</div>
-          <div class="plan-price">R$19,90<span>/mês</span></div>
-          <div class="plan-desc">Para começar a treinar com método.</div>
+          <div class="plan-name">Aluno START</div>
+          <div class="plan-price">R$ 19,90<span>/mês</span></div>
+          <div class="plan-desc">Para treinar por conta própria, com método.</div>
           <ul class="plan-features">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> App exclusivo</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Ficha de treino básica</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Suporte por e-mail</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Treino autônomo completo</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Gráfico de evolução de cargas</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Protocolo alimentar com IA</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Avaliação física (IMC + dobras)</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Cancele quando quiser</li>
           </ul>
-          <a class="btn btn-outline plan-btn" href="app.html">Começar</a>
+          <a class="btn btn-outline plan-btn" href="app.html">Começar com START</a>
         </div>
         <div class="plan-card featured rv">
-          <span class="plan-badge">Popular</span>
+          <span class="plan-badge">Mais popular</span>
           <div class="plan-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21 8 14 2 9.4h7.6z"/></svg></div>
-          <div class="plan-name">Aluno Pro</div>
-          <div class="plan-price">R$29,90<span>/mês</span></div>
-          <div class="plan-desc">Treino + dieta com acompanhamento completo.</div>
+          <div class="plan-name">Aluno PRO</div>
+          <div class="plan-price">R$ 29,90<span>/mês</span></div>
+          <div class="plan-desc">Acompanhamento completo, com personal de verdade.</div>
           <ul class="plan-features">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> App exclusivo</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Ficha personalizada</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Tudo do START</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Treino com personal trainer virtual</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Revisão e aprovação por personal real</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Protocolos sem limite</li>
             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Suporte prioritário</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Acesso a dietas</li>
           </ul>
-          <a class="btn plan-btn" href="app.html">Assinar Pro</a>
+          <a class="btn plan-btn" href="app.html">Assinar PRO</a>
         </div>
       </div>
 
       <!-- personais -->
-      <div class="plans-grid" id="plan-p">
-        <div class="plan-card featured rv">
-          <span class="plan-badge">Recomendado</span>
-          <div class="plan-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
-          <div class="plan-name">Personal Pro</div>
-          <div class="plan-price">R$39,90<span>/mês</span></div>
-          <div class="plan-desc">Para profissionais que vivem de personal.</div>
+      <div class="plans-grid cols3" id="plan-p">
+        <div class="plan-card rv">
+          <div class="plan-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg></div>
+          <div class="plan-name">Personal FREE</div>
+          <div class="plan-price">Grátis</div>
+          <span class="plan-limit">Até 2 alunos</span>
+          <div class="plan-desc">Teste a plataforma sem pagar nada.</div>
           <ul class="plan-features">
             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Gestão de alunos</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Até 20 alunos</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Agenda de treinos</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Relatórios</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Criação e aprovação de treinos</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Sem cartão, sem compromisso</li>
           </ul>
-          <a class="btn plan-btn" href="app.html">Assinar Pro</a>
+          <a class="btn btn-outline plan-btn" href="app.html">Começar grátis</a>
+        </div>
+        <div class="plan-card featured rv">
+          <span class="plan-badge">Principal</span>
+          <div class="plan-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+          <div class="plan-name">Personal PRO</div>
+          <div class="plan-price">R$ 39,90<span>/mês</span></div>
+          <span class="plan-limit">Até 15 alunos</span>
+          <div class="plan-desc">Para quem vive de personal.</div>
+          <ul class="plan-features">
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Gestão completa de alunos</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Treinos inteligentes com IA</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Evolução completa dos alunos</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Avaliações físicas</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Dietas com IA</li>
+          </ul>
+          <a class="btn plan-btn" href="app.html">Assinar PRO</a>
         </div>
         <div class="plan-card rv">
           <div class="plan-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 2.4 7.4H22l-6 4.6 2.3 7.4-6.3-4.6L5.7 21 8 14 2 9.4h7.6z"/></svg></div>
-          <div class="plan-name">Personal Elite</div>
-          <div class="plan-price">R$79,90<span>/mês</span></div>
-          <div class="plan-desc">Para equipes de personais e grandes carteiras.</div>
+          <div class="plan-name">Personal ELITE</div>
+          <div class="plan-price">R$ 79,90<span>/mês</span></div>
+          <span class="plan-limit">Até 100 alunos</span>
+          <div class="plan-desc">Para grandes carteiras e equipes.</div>
           <ul class="plan-features">
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Gestão de alunos</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Alunos ilimitados</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Agenda avançada</li>
-            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Relatórios</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Tudo do PRO</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Relatórios avançados</li>
             <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Prioridade no suporte</li>
+            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Capacidade para escalar</li>
           </ul>
-          <a class="btn btn-outline plan-btn" href="app.html">Assinar Elite</a>
+          <a class="btn btn-outline plan-btn" href="app.html">Assinar ELITE</a>
         </div>
       </div>
-      <p class="pnote">Cancele quando quiser. Sem fidelidade.</p>
+
+      <div class="trial-strip rv">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        <span>Aluno novo? <b>Teste tudo por 24h grátis</b> antes de escolher um plano — sem cartão de crédito.</span>
+      </div>
+      <p class="pnote">Sem fidelidade e sem multa. Cancele quando quiser, direto no app.</p>
     </div>
   </section>
 
@@ -606,11 +838,14 @@
         <h2>Perguntas frequentes</h2>
       </div>
       <div class="faq">
-        <details class="qa rv"><summary>Os treinos são mesmo personalizados?<span class="pm">+</span></summary><div class="ans">São. A IA monta o protocolo a partir do seu objetivo, nível e histórico, e o seu personal revisa e aprova antes de liberar. Dá pra pedir ajuste no meio do ciclo também.</div></details>
-        <details class="qa rv"><summary>Preciso já ter um personal para usar?<span class="pm">+</span></summary><div class="ans">Não. Se você não tem um personal fixo, é conectado ao Personal Principal da plataforma, que acompanha e aprova os seus protocolos.</div></details>
-        <details class="qa rv"><summary>Como funciona a comissão para o personal?<span class="pm">+</span></summary><div class="ans">O profissional recebe por cada protocolo que o aluno aceita, com um painel de comissões e controle de pagamentos, nos planos profissionais.</div></details>
-        <details class="qa rv"><summary>Funciona no celular?<span class="pm">+</span></summary><div class="ans">Sim. O IRONIQ é um app instalável (PWA): você adiciona à tela inicial e usa como um aplicativo nativo, no celular ou no computador.</div></details>
-        <details class="qa rv"><summary>Dá pra marcar aulas presenciais?<span class="pm">+</span></summary><div class="ans">Dá. O personal cria horários com vagas e repetição semanal, e os alunos fazem check-in pelo app — para aulas individuais ou em grupo.</div></details>
+        <details class="qa rv"><summary>Os treinos são mesmo personalizados?<span class="pm">+</span></summary><div class="ans">São. A IA monta o protocolo a partir do seu objetivo, nível e histórico, e um personal trainer real revisa e aprova antes de liberar. Se algo não encaixar, dá pra pedir ajuste no meio do ciclo, pelo chat.</div></details>
+        <details class="qa rv"><summary>Preciso já ter um personal para usar?<span class="pm">+</span></summary><div class="ans">Não. Se você não tem um personal fixo, é conectado ao Personal Principal da plataforma, que acompanha e aprova os seus protocolos como faria com qualquer aluno.</div></details>
+        <details class="qa rv"><summary>Como funciona o trial de 24h?<span class="pm">+</span></summary><div class="ans">Você cria a conta de aluno e usa a plataforma por 24 horas, grátis e sem cartão. Depois desse período, o acesso é pausado até você escolher um plano — START a R$ 19,90/mês ou PRO a R$ 29,90/mês.</div></details>
+        <details class="qa rv"><summary>Como funciona a comissão para o personal?<span class="pm">+</span></summary><div class="ans">A cada protocolo que um aluno seu aceita, a comissão é registrada automaticamente no seu painel, com histórico e controle de pagamentos. Você acompanha os ganhos em tempo real, nos planos profissionais.</div></details>
+        <details class="qa rv"><summary>Funciona no celular?<span class="pm">+</span></summary><div class="ans">Sim. O IRONIQ é um app instalável (PWA): você adiciona à tela inicial e usa como um aplicativo nativo, no celular ou no computador — sem loja de aplicativos.</div></details>
+        <details class="qa rv"><summary>Dá pra marcar aulas presenciais?<span class="pm">+</span></summary><div class="ans">Dá. O personal cria horários com vagas e repetição semanal, e os alunos reservam e fazem check-in pelo app — para aulas individuais ou em grupo.</div></details>
+        <details class="qa rv"><summary>Posso cancelar quando quiser?<span class="pm">+</span></summary><div class="ans">Pode. Nenhum plano tem fidelidade ou multa: o cancelamento é feito direto no app e vale a partir do fim do período já pago.</div></details>
+        <details class="qa rv"><summary>Meus dados estão seguros?<span class="pm">+</span></summary><div class="ans">Sim. Seus dados de treino, dieta e avaliação ficam protegidos em infraestrutura do Google (Firebase), com acesso autenticado. Os detalhes estão na nossa <a href="privacidade.html" style="color:#CCFF00;text-decoration:underline;text-underline-offset:3px;">Política de Privacidade</a>.</div></details>
       </div>
     </div>
   </section>
@@ -619,12 +854,16 @@
   <section class="block">
     <div class="wrap">
       <div class="endcta rv">
-        <h2>Pronto para começar a transformação?</h2>
-        <p>Crie sua conta agora. Se você já é aluno, é só entrar e continuar de onde parou.</p>
+        <span class="eyebrow"><span class="dot"></span>24h grátis · sem cartão</span>
+        <h2>Seu próximo ciclo começa <span class="glow-green">hoje</span></h2>
+        <p>Crie sua conta agora e receba um protocolo montado pela IA e aprovado por um personal de verdade. Se não for pra você, é só não assinar.</p>
         <div class="hero-cta">
-          <a class="btn" href="app.html">Criar minha conta</a>
-          <a class="btn btn-secondary" href="#acesso" onclick="focoLogin()">Já sou aluno</a>
+          <a class="btn" href="app.html">Criar conta grátis
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+          <a class="btn btn-secondary" href="#acesso" onclick="focoLogin()">Já tenho conta</a>
         </div>
+        <p class="mini">Personal trainer? Comece grátis com até 2 alunos — sem cartão, sem prazo.</p>
       </div>
     </div>
   </section>
@@ -635,9 +874,9 @@
       <div class="foot">
         <div class="fbrand">
           <a class="brand" href="#top"><img src="logo.webp" alt="IRONIQ" style="width:30px;height:30px;border-radius:8px;"><span class="logo" style="font-size:20px;">IRON<span>IQ</span></span></a>
-          <p>Treinos inteligentes que evoluem com você. Treino e dieta com IA, acompanhados por personal.</p>
+          <p>Treino e dieta gerados por IA e aprovados por um personal de verdade. Evolução com método, pra quem treina e pra quem ensina.</p>
         </div>
-        <div class="fcol"><h5>Produto</h5><a href="#recursos">Recursos</a><a href="#publico">Para quem é</a><a href="#planos">Planos</a><a href="#faq">Dúvidas</a></div>
+        <div class="fcol"><h5>Produto</h5><a href="#como-funciona">Como funciona</a><a href="#recursos">Recursos</a><a href="#publico">Para quem é</a><a href="#planos">Planos</a><a href="#faq">Dúvidas</a></div>
         <div class="fcol"><h5>Conta</h5><a href="#acesso" onclick="focoLogin()">Entrar</a><a href="app.html">Criar conta</a></div>
       </div>
       <div class="fbot">
